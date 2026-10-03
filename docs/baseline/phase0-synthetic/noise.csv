@@ -1,0 +1,13 @@
+setup,sample_rate_hz,noise_dbfs,duration_s,frames,valid_frames,note_ons
+warf-like-yin,44100,-50,10,858,0,0
+warf-like-yin,44100,-30,10,858,0,0
+full-range-yin,44100,-50,10,3988,0,0
+full-range-yin,44100,-30,10,3988,0,0
+warf-like-yin,48000,-50,10,934,0,0
+warf-like-yin,48000,-30,10,934,0,0
+full-range-yin,48000,-50,10,3979,0,0
+full-range-yin,48000,-30,10,3979,0,0
+warf-like-yin,96000,-50,10,934,0,0
+warf-like-yin,96000,-30,10,934,0,0
+full-range-yin,96000,-50,10,3979,0,0
+full-range-yin,96000,-30,10,3979,0,0

@@ -2,7 +2,7 @@
 
 ## Project purpose
 
-Bass2MIDI is a macOS-first, real-time, **monophonic electric bass to MIDI** converter. It starts as a focused fork of [Warf](https://github.com/dferreiramarques/warf), a JUCE/VST3 audio-to-MIDI project with YIN-based pitch tracking.
+Bass2MIDI is a macOS-first, real-time, **monophonic electric bass to MIDI** converter, built as an independent JUCE project. [Warf](https://github.com/dferreiramarques/warf) (MIT), a JUCE/VST3 audio-to-MIDI plugin with YIN-based pitch tracking, was the starting idea; it was evaluated and not forked (VST3-only, which MainStage cannot host; fixed 60 Hz window floor that cannot reach E1, nor F1 at 48 kHz and above). No Warf code is included. Its default analysis framing is reproduced from its documented parameters as the `warf-like-yin` measurement reference.
 
 The product goal is not a general audio-to-MIDI system. It is a dependable live-performance tool for a four-string electric bass connected to an audio interface and routed into MainStage. Musical stability is more important than chasing an implausibly low latency number: a slightly later correct note is better than a fast octave error or a false retrigger.
 
@@ -10,6 +10,27 @@ Primary signal path:
 
 ```text
 Electric bass -> audio interface -> Bass2MIDI -> virtual MIDI output -> MainStage
+```
+
+V1 is delivered as a **standalone macOS app** that opens the audio interface itself and publishes a virtual CoreMIDI source named `Bass2MIDI`, which MainStage selects as a MIDI input. MainStage only hosts Audio Units, so a VST3 plugin cannot sit in this path.
+
+## Repository layout
+
+| Path | Contents | Depends on |
+| --- | --- | --- |
+| `dsp/` | Real-time DSP core (`bass2midi_dsp`): framing, FFT, pitch estimators, later onset/validation/state machine | C++20 only, no JUCE |
+| `app/` | Standalone JUCE app: audio device, virtual MIDI port, sender thread, diagnostics UI | JUCE 8, `dsp/` |
+| `eval/` | Offline evaluation: synthetic corpus, reference setups, `bass2midi_baseline` tool | `dsp/` |
+| `tests/` | doctest unit tests (`bass2midi_tests`) | `dsp/`, `eval/` |
+| `docs/` | Design notes and versioned evaluation results | - |
+
+Build and test (DSP/tests need no JUCE; add `-DBASS2MIDI_BUILD_APP=OFF` to skip the app):
+
+```sh
+cmake -S . -B build -G Ninja -DBASS2MIDI_BUILD_APP=OFF
+cmake --build build
+ctest --test-dir build --output-on-failure
+./build/bass2midi_baseline --out docs/baseline/<name>   # full corpus, ~90 s; --quick for a subset
 ```
 
 ## Scope
@@ -34,7 +55,7 @@ Electric bass -> audio interface -> Bass2MIDI -> virtual MIDI output -> MainStag
 - Perfect slide, vibrato, legato, or mute transcription.
 - Audio effects processing, amp simulation, recording, or a DAW replacement.
 - Machine-learning inference on the audio thread.
-- Premature conversion into an Audio Unit. Keep the JUCE/VST3 foundation unless a dedicated standalone/macOS MIDI-routing target is required by the host workflow.
+- Plugin formats (VST3/AU) for V1. The standalone app with a virtual CoreMIDI port is the V1 target; add an Audio Unit only when it offers a concrete workflow benefit.
 
 ## Architectural principles
 
@@ -60,10 +81,10 @@ Audio input
 - **Input conditioning:** Remove DC and subsonic contamination without damaging the E1 fundamental. Keep filter delays documented and measurable.
 - **Attack detector:** Emit an onset candidate from energy/envelope changes. It may start or prioritize pitch estimation, but must not emit MIDI alone.
 - **Pitch tracker:** Return candidate frequency, clarity/confidence, period estimate, and enough diagnostic data to identify harmonic and octave choices.
-- **Window controller:** Select the smallest reliable window based on pitch range, attack state, and recent stable period. Avoid a single fixed large window inherited from Warf.
+- **Window controller:** Select the smallest reliable window based on pitch range, attack state, and recent stable period. Avoid a single fixed large window (the `warf-like-yin` and `full-range-yin` references show its cost).
 - **Validator:** Combine pitch confidence, harmonic evidence, continuity with the prior note, and signal level. Explicitly penalize one- and two-octave jumps unless an onset and strong evidence justify them.
 - **Note state machine:** Own all MIDI lifecycle decisions. It must guarantee matched Note On/Off pairs, prevent duplicate Note Ons, and define retrigger and legato behavior.
-- **MIDI adapter:** Translate decisions into JUCE/plugin MIDI events and, where applicable, a macOS virtual MIDI destination. Do not put DSP decisions here.
+- **MIDI adapter:** Translate decisions into messages for the virtual CoreMIDI source, via a lock-free queue and a dedicated sender thread (never call the MIDI API from the audio callback). Do not put DSP decisions here.
 - **Diagnostics:** Capture bounded, lock-free metrics/events suitable for an editor/debug view and offline evaluation. Never print or allocate from the audio callback.
 
 ## Real-time constraints
@@ -102,7 +123,7 @@ Quality targets for representative clean input are:
 
 ## Pitch-tracking policy
 
-Evaluate both the McLeod Pitch Method (MPM) and a bass-adapted YIN implementation against the same corpus. Do not replace Warf's tracker based on theory alone.
+Evaluate both the McLeod Pitch Method (MPM) and a bass-adapted YIN implementation against the same corpus. Measure every candidate against the reference setups; do not choose a tracker based on theory alone.
 
 - Keep the valid period/frequency bounds explicit and sample-rate aware.
 - Bias candidate selection toward continuity, but permit a real new note after an onset.
@@ -150,7 +171,7 @@ Evaluate guidance against the same passages in Free and guided modes. Record cor
 
 ## Coding guidelines
 
-- Follow the existing Warf/JUCE code style when editing inherited files; use clear modern C++ in new code.
+- Use clear modern C++20. Keep `dsp/` free of JUCE so it stays testable anywhere; JUCE types belong in `app/`.
 - Prefer small, deterministic DSP units with explicit inputs, outputs, units, and reset behavior.
 - Keep sample counts internally; convert to milliseconds only at boundaries/UI/metrics.
 - Name frequency in `Hz`, periods in `samples` or `seconds`, levels in `dBFS` or linear units, and times in `ms`/`samples` explicitly.
@@ -158,7 +179,7 @@ Evaluate guidance against the same passages in Free and guided modes. Record cor
 - Keep public interfaces narrow. Avoid global mutable DSP state.
 - Add parameter validation and safe defaults for all externally supplied settings.
 - Do not silently change MIDI semantics, latency, or default thresholds; add tests and explain the impact in the change description.
-- Retain upstream attribution and license notices. Keep fork-specific changes isolated enough to make upstream comparison possible.
+- Do not copy third-party code without explicit approval from the project owner; when approved, retain attribution and license notices. Reference implementations are reimplemented from papers or documented parameters.
 
 ## Test strategy
 
@@ -197,9 +218,9 @@ Do not average away failures: preserve per-case output and inspect worst cases.
 
 ## Development phases
 
-### Phase 0 — Baseline the Warf fork
+### Phase 0 — Project skeleton and reference baseline
 
-Build the unmodified fork, document its plugin/standalone targets, trace the current YIN and note-tracking path, and establish baseline accuracy/latency measurements. Preserve a reproducible baseline before major rewrites.
+Set up the DSP library, standalone app with virtual MIDI port, test runner and offline evaluation tool. Measure plain-YIN reference setups (`warf-like-yin`, `full-range-yin`) on a synthetic corpus and keep the results versioned (`docs/baseline/`, analysis in `docs/phase0-baseline.md`). Preserve this reproducible baseline before tracker work.
 
 ### Phase 1 — Bass-focused instrumentation and guardrails
 
