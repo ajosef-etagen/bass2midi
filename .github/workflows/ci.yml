@@ -9,7 +9,7 @@ jobs:
     name: DSP tests (Linux)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: sudo apt-get update && sudo apt-get install -y ninja-build
       - run: cmake -S . -B build -G Ninja -DBASS2MIDI_BUILD_APP=OFF
       - run: cmake --build build
@@ -24,7 +24,7 @@ jobs:
     name: App + tests (macOS)
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: brew install ninja
       - run: cmake -S . -B build -G Ninja
       - run: cmake --build build
