@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bass2midi/AnalysisFramer.h"
+#include "bass2midi/NoteStateMachine.h"
 #include "bass2midi/YinPitchEstimator.h"
 
 #include <juce_audio_devices/juce_audio_devices.h>
@@ -10,22 +11,29 @@
 
 class MidiOutputSender;
 
-// Audio-device callback: runs pitch analysis on one selected active input channel.
+// Audio-device callback: runs pitch analysis and the note state machine on one selected active
+// input channel, and hands the resulting MIDI events to the MidiOutputSender.
 //
-// Phase 0 state: analysis is for monitoring only (reference YIN over the full V1 range). No MIDI
-// is generated from audio yet - that waits for the authoritative note state machine (Phase 1).
+// Pipeline per analysis frame: YIN (full V1 range) -> NoteStateMachine -> lock-free MIDI FIFO.
 //
 // Real-time rules: audioDeviceIOCallbackWithContext never allocates, locks, logs or touches the
-// UI. Everything the UI shows is published through relaxed atomics, read by a message-thread timer.
+// UI. User settings arrive through atomics and are applied at block start; everything the UI shows
+// is published through relaxed atomics, read by a message-thread timer.
+//
+// Cross-thread boundaries:
+//  - message thread -> audio thread: setAnalysedChannel, setMidiSettings (atomics + version counter)
+//  - audio thread -> sender thread: MidiOutputSender::pushFromAudioThread (SPSC FIFO)
+//  - audio thread -> message thread: Snapshot atomics
 class AudioEngine final : public juce::AudioIODeviceCallback
 {
 public:
     // Reference analysis range: E1 and G4 each with > 1 semitone margin. Same values as the
-    // offline "full-range-yin" reference setup so live readings match the baseline report.
+    // offline "full-range-yin" setup so live behaviour matches the evaluation report.
     static constexpr double analysisLowestHz = 38.0;
     static constexpr double analysisHighestHz = 420.0;
     static constexpr double analysisHopSeconds = 0.0025;
     static constexpr double yinThreshold = 0.15;
+    static constexpr double onsetSettleWindowFraction = 0.75; // of the analysis window, see NoteStateMachine
 
     explicit AudioEngine (MidiOutputSender& sender);
 
@@ -41,6 +49,9 @@ public:
         int hopSamples = 0;
         double worstCallbackMs = 0.0;
         double averageCallbackMs = 0.0;
+        int soundingNote = -1;   // MIDI note currently on, -1 = none
+        int lastVelocity = 0;
+        int noteOnCount = 0;     // since start, for the UI
     };
 
     // Message thread.
@@ -49,6 +60,10 @@ public:
     // Message thread. Index among the device's *active* input channels (0 = first enabled
     // channel); clamped to the channels actually delivered by the device.
     void setAnalysedChannel (int activeChannelIndex) noexcept { requestedChannel.store (juce::jmax (0, activeChannelIndex)); }
+
+    // Message thread. Applied by the audio thread at the next block. Disabling the output (or
+    // changing the channel) ends a sounding note with a matching Note Off.
+    void setMidiSettings (bool outputEnabled, int midiChannel, double gateOpenDbfs) noexcept;
 
     // Message thread. Highest absolute sample value of the analysed channel since the last call.
     float takeInputPeakLinear() noexcept { return inputPeakLinear.exchange (0.0f); }
@@ -61,21 +76,33 @@ public:
                                            int numSamples, const juce::AudioIODeviceCallbackContext& context) override;
 
 private:
+    void applyPendingSettings() noexcept;
     void handleFrame (const float* window) noexcept;
+    void sendEvents (const bass2midi::NoteStateMachine::Output& output) noexcept;
 
-    [[maybe_unused]] MidiOutputSender& midiSender; // used once the note state machine exists
+    MidiOutputSender& midiSender;
 
     bass2midi::AnalysisFramer framer;
     bass2midi::YinPitchEstimator estimator;
+    bass2midi::NoteStateMachine noteMachine;
+    bass2midi::NoteStateMachine::Settings noteSettings; // audio thread copy (frame timing set at device start)
     bool analysisReady = false;
+    bool outputEnabled = true;
+    int appliedSettingsVersion = -1;
 
     std::atomic<int> requestedChannel { 0 };
     std::atomic<float> inputPeakLinear { 0.0f };
+
+    std::atomic<bool> pendingOutputEnabled { true };
+    std::atomic<int> pendingMidiChannel { 1 };
+    std::atomic<double> pendingGateOpenDbfs { -45.0 };
+    std::atomic<int> settingsVersion { 0 };
 
     std::atomic<bool> lastValid { false };
     std::atomic<double> lastFrequencyHz { 0.0 }, lastClarity { 0.0 }, lastRmsLinear { 0.0 };
     std::atomic<double> sampleRateHz { 0.0 };
     std::atomic<int> blockSize { 0 }, windowSamples { 0 }, hopSamples { 0 };
+    std::atomic<int> soundingNote { -1 }, lastVelocity { 0 }, noteOnCount { 0 };
 
     // Callback cost, measured with the high-resolution tick counter (lock- and allocation-free).
     std::atomic<std::int64_t> worstCallbackTicks { 0 }, totalCallbackTicks { 0 }, callbackCount { 0 };

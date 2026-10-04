@@ -43,7 +43,7 @@ if(BASS2MIDI_BUILD_TESTS)
     target_link_libraries(bass2midi_baseline PRIVATE bass2midi_eval bass2midi_warnings)
 
     enable_testing()
-    add_executable(bass2midi_tests tests/DspTests.cpp)
+    add_executable(bass2midi_tests tests/DspTests.cpp tests/NoteStateMachineTests.cpp)
     target_link_libraries(bass2midi_tests PRIVATE bass2midi_eval doctest::doctest bass2midi_warnings)
     add_test(NAME bass2midi_tests COMMAND bass2midi_tests)
 endif()

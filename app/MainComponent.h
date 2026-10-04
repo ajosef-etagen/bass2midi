@@ -6,8 +6,9 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
-// Phase 0 window: audio input selection, virtual MIDI port status, a test-note button for
-// verifying the MainStage route, and live reference-pitch / timing diagnostics.
+// Main window: audio input selection, MIDI output settings (enable, channel, gate), virtual MIDI
+// port status, a test-note button for verifying the MainStage route, and live pitch / note /
+// timing diagnostics.
 class MainComponent final : public juce::Component, private juce::Timer
 {
 public:
@@ -15,7 +16,9 @@ public:
     static constexpr int testNote = 48;         // C3
     static constexpr int testVelocity = 100;
     static constexpr int testNoteLengthMs = 400;
-    static constexpr int midiChannel = 1;
+    static constexpr int defaultMidiChannel = 1;
+    static constexpr double defaultGateDbfs = -45.0;   // NoteStateMachine::Settings default
+    static constexpr double minGateDbfs = -80.0, maxGateDbfs = -20.0;
 
     explicit MainComponent (juce::PropertiesFile& settings);
     ~MainComponent() override;
@@ -29,6 +32,7 @@ private:
     void saveDeviceState();
     void refreshInputChannelChoices();
     void inputChannelChosen();
+    void midiSettingsChanged();
 
     juce::PropertiesFile& settings;
     juce::AudioDeviceManager deviceManager;
@@ -41,6 +45,12 @@ private:
     juce::ComboBox inputChannelBox;
     juce::StringArray activeInputNames;   // active input channels, in the order the device delivers them
     float displayedPeakLinear = 0.0f;     // decaying peak hold for the readout
+    juce::ToggleButton midiEnabledToggle { "MIDI output" };
+    juce::Label midiChannelLabel { {}, "Channel:" };
+    juce::ComboBox midiChannelBox;
+    juce::Label gateLabel { {}, "Gate (dBFS):" };
+    juce::Slider gateSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight };
+    int currentMidiChannel = defaultMidiChannel;
     juce::TextButton testNoteButton { "Send test note (C3)" };
     juce::TextButton resetStatsButton { "Reset timing stats" };
     bool testNoteSounding = false;
