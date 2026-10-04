@@ -45,13 +45,15 @@ libxinerama-dev libxcursor-dev libxcomposite-dev libxext-dev`), but macOS is the
    Recommended: 48 kHz, 64 or 128 samples buffer; use the same sample rate in MainStage.
 3. Set **Gate**: mute the strings, read the noise level under *Analysed input → peak*, and set the gate a few dB
    above it (default −45 dBFS). Plucks must exceed the gate to start a note.
-4. In MainStage, set a software instrument channel strip's MIDI input to `Bass2MIDI` and the channel to the one
+4. **Transpose** (±24 semitones, double-click resets to 0) shifts the sent notes, e.g. +12 for bass patches that
+   are mapped an octave low. Detection is unaffected; a sounding note keeps its output note until its Note Off.
+5. In MainStage, set a software instrument channel strip's MIDI input to `Bass2MIDI` and the channel to the one
    chosen in Bass2MIDI (default 1).
-5. **Test note (MIDI 48)** checks the route; then play. The big readout shows the MIDI note being sent.
+6. **Test note (MIDI 48)** checks the route; then play. The big readout shows the MIDI note being sent.
 
 Note names: Bass2MIDI calls MIDI 60 "C4" (scientific pitch, open low E = E1 = MIDI 28). Logic and MainStage call
-MIDI 60 "C3", so the same notes appear one octave lower there (open low E = "E0"). The MIDI numbers are identical;
-the readout shows both names.
+MIDI 60 "C3" by default, so the same notes appear one octave lower there (open low E = "E0"); MainStage can be
+switched to the C4 convention in its MIDI settings. The MIDI numbers are identical; the readout shows the number.
 
 The virtual port does not appear in Audio MIDI Setup's MIDI Studio window; it is listed in the MIDI input choices of
 other apps (MainStage, or e.g. the free *MIDI Monitor* for checking).

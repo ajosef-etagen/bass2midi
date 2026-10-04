@@ -5,8 +5,9 @@
 
 AudioEngine::AudioEngine (MidiOutputSender& sender) : midiSender (sender) {}
 
-void AudioEngine::setMidiSettings (bool enabled, int midiChannel, double gateOpenDbfs) noexcept
+void AudioEngine::setMidiSettings (bool enabled, int midiChannel, double gateOpenDbfs, int transposeSemitones) noexcept
 {
+    pendingTransposeSemitones.store (juce::jlimit (-48, 48, transposeSemitones));
     pendingOutputEnabled.store (enabled);
     pendingMidiChannel.store (juce::jlimit (1, 16, midiChannel));
     pendingGateOpenDbfs.store (juce::jlimit (-90.0, 0.0, gateOpenDbfs));
@@ -63,6 +64,7 @@ void AudioEngine::applyPendingSettings() noexcept
     auto updated = noteSettings;
     updated.midiChannel = pendingMidiChannel.load();
     updated.gateOpenDbfs = pendingGateOpenDbfs.load();
+    updated.transposeSemitones = pendingTransposeSemitones.load();
 
     // A channel change ends the sounding note on its old channel instead of letting it hang.
     if (updated.midiChannel != noteSettings.midiChannel && noteMachine.getSoundingNote() >= 0)
@@ -154,7 +156,8 @@ void AudioEngine::sendEvents (const bass2midi::NoteStateMachine::Output& output)
         }
     }
 
-    soundingNote.store (noteMachine.getSoundingNote(), std::memory_order_relaxed);
+    soundingNote.store (noteMachine.getSoundingOutputNote(), std::memory_order_relaxed);
+    playedNote.store (noteMachine.getSoundingNote(), std::memory_order_relaxed);
 }
 
 AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
@@ -170,6 +173,7 @@ AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
     s.windowSamples = windowSamples.load();
     s.hopSamples = hopSamples.load();
     s.soundingNote = soundingNote.load();
+    s.playedNote = playedNote.load();
     s.lastVelocity = lastVelocity.load();
     s.noteOnCount = noteOnCount.load();
 

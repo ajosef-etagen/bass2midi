@@ -312,3 +312,38 @@ TEST_CASE ("Note state machine: pairing invariants hold on a pseudo-random frame
     CHECK (h.count (Type::noteOn) == h.count (Type::noteOff));
     CHECK (h.count (Type::noteOn) > 0);
 }
+
+TEST_CASE ("Note state machine: transposition applies to output and never orphans a note")
+{
+    Harness h;
+    auto s = h.machine.getSettings();
+    s.transposeSemitones = 12;
+    REQUIRE (h.machine.setSettings (s));
+
+    h.feed (frame (28.0, -10.0), 3);
+    REQUIRE (h.count (Type::noteOn) == 1);
+    CHECK (h.events.back().note == 40);           // played E1 (28) sent as E2 (40)
+    CHECK (h.machine.getSoundingNote() == 28);
+    CHECK (h.machine.getSoundingOutputNote() == 40);
+
+    // Changing the transposition mid-note: the Note Off still uses the note that was sent.
+    s.transposeSemitones = -12;
+    REQUIRE (h.machine.setSettings (s));
+    const auto out = h.machine.allNotesOff();
+    REQUIRE (out.count == 1);
+    CHECK (out.events[0].note == 40);
+
+    s.transposeSemitones = 49;
+    CHECK_FALSE (s.isValid());
+    s.transposeSemitones = -48;
+    CHECK (s.isValid());
+
+    // Notes that would leave 0..127 are not played at all.
+    Harness low;
+    auto ls = low.machine.getSettings();
+    ls.transposeSemitones = -30;
+    REQUIRE (low.machine.setSettings (ls));
+    CHECK (low.feed (frame (28.0, -10.0), 50) == 0);
+    CHECK (low.feed (frame (40.0, -10.0), 2) == 1);
+    CHECK (low.events.back().note == 10);
+}

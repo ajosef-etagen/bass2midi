@@ -11,6 +11,7 @@ namespace
     constexpr const char* midiEnabledKey = "midiOutputEnabled";
     constexpr const char* midiChannelKey = "midiChannel";
     constexpr const char* gateKey = "gateOpenDbfs";
+    constexpr const char* transposeKey = "transposeSemitones";
 }
 
 MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (settingsToUse)
@@ -59,13 +60,20 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     gateSlider.setRange (minGateDbfs, maxGateDbfs, 1.0);
     gateSlider.setValue (juce::jlimit (minGateDbfs, maxGateDbfs, settings.getDoubleValue (gateKey, defaultGateDbfs)), juce::dontSendNotification);
     gateSlider.setTextValueSuffix (" dBFS");
+    transposeSlider.setRange (-maxTransposeSemitones, maxTransposeSemitones, 1.0);
+    transposeSlider.setValue (juce::jlimit (-maxTransposeSemitones, maxTransposeSemitones, settings.getIntValue (transposeKey, 0)), juce::dontSendNotification);
+    transposeSlider.setTextValueSuffix (" st");
+    transposeSlider.setDoubleClickReturnValue (true, 0.0);
+    transposeSlider.onValueChange = [this] { midiSettingsChanged(); };
+    transposeLabel.setJustificationType (juce::Justification::centredRight);
 
     midiEnabledToggle.onClick = [this] { midiSettingsChanged(); };
     midiChannelBox.onChange = [this] { midiSettingsChanged(); };
     gateSlider.onValueChange = [this] { midiSettingsChanged(); };
     midiChannelLabel.setJustificationType (juce::Justification::centredRight);
     gateLabel.setJustificationType (juce::Justification::centredRight);
-    for (auto* c : std::initializer_list<juce::Component*> { &midiEnabledToggle, &midiChannelLabel, &midiChannelBox, &gateLabel, &gateSlider })
+    for (auto* c : std::initializer_list<juce::Component*> { &midiEnabledToggle, &midiChannelLabel, &midiChannelBox, &gateLabel, &gateSlider,
+                                                             &transposeLabel, &transposeSlider })
         addAndMakeVisible (*c);
     midiSettingsChanged();
 
@@ -75,7 +83,7 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     addAndMakeVisible (testNoteButton);
     addAndMakeVisible (resetStatsButton);
 
-    setSize (680, 800);
+    setSize (680, 840);
     startTimerHz (20);
 }
 
@@ -140,8 +148,10 @@ void MainComponent::midiSettingsChanged()
     currentMidiChannel = juce::jmax (1, midiChannelBox.getSelectedId());
     const bool enabled = midiEnabledToggle.getToggleState();
     const double gate = gateSlider.getValue();
+    const int transpose = (int) transposeSlider.getValue();
 
-    engine.setMidiSettings (enabled, currentMidiChannel, gate);
+    engine.setMidiSettings (enabled, currentMidiChannel, gate, transpose);
+    settings.setValue (transposeKey, transpose);
 
     settings.setValue (midiEnabledKey, enabled);
     settings.setValue (midiChannelKey, currentMidiChannel);
@@ -188,12 +198,14 @@ void MainComponent::timerCallback()
     // Big readout: the MIDI note currently on (what MainStage hears), else the raw pitch estimate.
     if (s.soundingNote >= 0)
     {
-        // Names use middle C = C4; Logic/MainStage call MIDI 60 "C3", one octave lower. The MIDI
-        // number is shown so the two can be matched.
+        // Names use middle C = C4 (Logic/MainStage default to "C3" for MIDI 60 unless set to the
+        // Roland convention); the MIDI number is shown so both conventions can be matched.
         pitchReadout.setText ("MIDI " + juce::String (s.soundingNote) + "  "
                                   + juce::String (bass2midi::midi::noteName (s.soundingNote))
-                                  + " (MainStage: " + juce::String (bass2midi::midi::noteName (s.soundingNote - 12)) + ")"
-                                  + "   vel " + juce::String (s.lastVelocity),
+                                  + "   vel " + juce::String (s.lastVelocity)
+                                  + (s.playedNote >= 0 && s.playedNote != s.soundingNote
+                                         ? "   (played " + juce::String (bass2midi::midi::noteName (s.playedNote)) + ")"
+                                         : juce::String()),
                               juce::dontSendNotification);
     }
     else if (s.valid && s.frequencyHz > 0.0)
@@ -238,7 +250,8 @@ void MainComponent::timerCallback()
     }
 
     text << "MIDI\n"
-         << "  output         " << (midiEnabledToggle.getToggleState() ? "on" : "off") << ", channel " << currentMidiChannel << "\n"
+         << "  output         " << (midiEnabledToggle.getToggleState() ? "on" : "off") << ", channel " << currentMidiChannel
+         << ", transpose " << juce::String ((int) transposeSlider.getValue()) << " st\n"
          << "  sounding       " << (s.soundingNote >= 0 ? juce::String (bass2midi::midi::noteName (s.soundingNote)) : juce::String ("-")) << "\n"
          << "  note ons       " << s.noteOnCount << " (last velocity " << s.lastVelocity << ")\n"
          << "  sender poll    <= " << MidiOutputSender::senderPollIntervalMs << " ms added\n"
@@ -267,6 +280,11 @@ void MainComponent::resized()
     midiChannelBox.setBounds (midiRow.removeFromLeft (70));
     gateLabel.setBounds (midiRow.removeFromLeft (100));
     gateSlider.setBounds (midiRow.removeFromLeft (280));
+    area.removeFromTop (4);
+    auto transposeRow = area.removeFromTop (28);
+    transposeRow.removeFromLeft (120);
+    transposeLabel.setBounds (transposeRow.removeFromLeft (140));
+    transposeSlider.setBounds (transposeRow.removeFromLeft (380));
     area.removeFromTop (8);
     midiStatus.setBounds (area.removeFromTop (24));
 

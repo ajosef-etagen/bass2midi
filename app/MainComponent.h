@@ -19,6 +19,7 @@ public:
     static constexpr int defaultMidiChannel = 1;
     static constexpr double defaultGateDbfs = -45.0;   // NoteStateMachine::Settings default
     static constexpr double minGateDbfs = -80.0, maxGateDbfs = -20.0;
+    static constexpr int maxTransposeSemitones = 24;
 
     explicit MainComponent (juce::PropertiesFile& settings);
     ~MainComponent() override;
@@ -50,6 +51,8 @@ private:
     juce::ComboBox midiChannelBox;
     juce::Label gateLabel { {}, "Gate (dBFS):" };
     juce::Slider gateSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight };
+    juce::Label transposeLabel { {}, "Transpose:" };
+    juce::Slider transposeSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight };
     int currentMidiChannel = defaultMidiChannel;
     juce::TextButton testNoteButton { "Test note (MIDI 48)" };
     juce::TextButton resetStatsButton { "Reset timing stats" };

@@ -49,7 +49,8 @@ public:
         int hopSamples = 0;
         double worstCallbackMs = 0.0;
         double averageCallbackMs = 0.0;
-        int soundingNote = -1;   // MIDI note currently on, -1 = none
+        int soundingNote = -1;   // MIDI note currently sent (after transposition), -1 = none
+        int playedNote = -1;     // detected note behind it
         int lastVelocity = 0;
         int noteOnCount = 0;     // since start, for the UI
     };
@@ -62,8 +63,9 @@ public:
     void setAnalysedChannel (int activeChannelIndex) noexcept { requestedChannel.store (juce::jmax (0, activeChannelIndex)); }
 
     // Message thread. Applied by the audio thread at the next block. Disabling the output (or
-    // changing the channel) ends a sounding note with a matching Note Off.
-    void setMidiSettings (bool outputEnabled, int midiChannel, double gateOpenDbfs) noexcept;
+    // changing the channel) ends a sounding note with a matching Note Off; a transposition change
+    // applies from the next note (the sounding one keeps its output note until its Note Off).
+    void setMidiSettings (bool outputEnabled, int midiChannel, double gateOpenDbfs, int transposeSemitones) noexcept;
 
     // Message thread. Highest absolute sample value of the analysed channel since the last call.
     float takeInputPeakLinear() noexcept { return inputPeakLinear.exchange (0.0f); }
@@ -96,13 +98,14 @@ private:
     std::atomic<bool> pendingOutputEnabled { true };
     std::atomic<int> pendingMidiChannel { 1 };
     std::atomic<double> pendingGateOpenDbfs { -45.0 };
+    std::atomic<int> pendingTransposeSemitones { 0 };
     std::atomic<int> settingsVersion { 0 };
 
     std::atomic<bool> lastValid { false };
     std::atomic<double> lastFrequencyHz { 0.0 }, lastClarity { 0.0 }, lastRmsLinear { 0.0 };
     std::atomic<double> sampleRateHz { 0.0 };
     std::atomic<int> blockSize { 0 }, windowSamples { 0 }, hopSamples { 0 };
-    std::atomic<int> soundingNote { -1 }, lastVelocity { 0 }, noteOnCount { 0 };
+    std::atomic<int> soundingNote { -1 }, playedNote { -1 }, lastVelocity { 0 }, noteOnCount { 0 };
 
     // Callback cost, measured with the high-resolution tick counter (lock- and allocation-free).
     std::atomic<std::int64_t> worstCallbackTicks { 0 }, totalCallbackTicks { 0 }, callbackCount { 0 };

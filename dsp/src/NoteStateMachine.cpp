@@ -23,6 +23,7 @@ namespace bass2midi
             && nonNegative (onsetSettleMs)
             && midiChannel >= 1 && midiChannel <= 16
             && lowestNote >= 0 && highestNote <= 127 && lowestNote <= highestNote
+            && transposeSemitones >= -48 && transposeSemitones <= 48
             && minClarity > 0.0 && minClarity <= 1.0
             && toleranceCents > 0.0 && toleranceCents < 50.0
             && envelopeHoldMs > 0.0 && std::isfinite (envelopeHoldMs)
@@ -64,6 +65,7 @@ namespace bass2midi
     void NoteStateMachine::reset() noexcept
     {
         soundingNote = -1;
+        soundingOutputNote = -1;
         lastVelocity = 0;
         candidateNote = -1;
         candidateFrames = 0;
@@ -90,8 +92,9 @@ namespace bass2midi
 
     void NoteStateMachine::addNoteOff (Output& out) noexcept
     {
-        out.events[static_cast<size_t> (out.count++)] = { NoteEvent::Type::noteOff, soundingChannel, soundingNote, 0 };
+        out.events[static_cast<size_t> (out.count++)] = { NoteEvent::Type::noteOff, soundingChannel, soundingOutputNote, 0 };
         soundingNote = -1;
+        soundingOutputNote = -1;
         quietFrames = 0;
         unvoicedFrames = 0;
     }
@@ -100,8 +103,9 @@ namespace bass2midi
     {
         lastVelocity = velocityFromPeak (attackPeakLinear, settings);
         soundingNote = note;
+        soundingOutputNote = note + settings.transposeSemitones;
         soundingChannel = settings.midiChannel;
-        out.events[static_cast<size_t> (out.count++)] = { NoteEvent::Type::noteOn, soundingChannel, note, lastVelocity };
+        out.events[static_cast<size_t> (out.count++)] = { NoteEvent::Type::noteOn, soundingChannel, soundingOutputNote, lastVelocity };
 
         candidateNote = -1;
         candidateFrames = 0;
@@ -177,7 +181,8 @@ namespace bass2midi
             const double exact = midi::noteFromFrequencyHz (frame.pitch.frequencyHz);
             note = static_cast<int> (std::lround (exact));
             withinTolerance = std::abs (exact - note) * 100.0 <= settings.toleranceCents;
-            if (note < settings.lowestNote || note > settings.highestNote)
+            const int outputNote = note + settings.transposeSemitones;
+            if (note < settings.lowestNote || note > settings.highestNote || outputNote < 0 || outputNote > 127)
                 note = -1;
         }
 

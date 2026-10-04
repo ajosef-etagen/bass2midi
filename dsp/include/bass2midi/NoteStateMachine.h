@@ -60,6 +60,8 @@ namespace bass2midi
             int midiChannel = 1;                  // 1..16
             int lowestNote = 26;                  // D1: E1 minus a whole tone for detuned/slack strings
             int highestNote = 69;                 // A4: G4 plus a whole tone
+            int transposeSemitones = 0;           // added to the played note on output, -48..48; notes that
+                                                  // would leave 0..127 are not played
             double minClarity = 0.80;             // YIN clarity (1 - d') required to count a frame
             double toleranceCents = 40.0;         // max distance of a counted frame from its semitone
             double envelopeHoldMs = 25.0;         // level = max hop peak over this span (> longest period)
@@ -89,7 +91,8 @@ namespace bass2midi
         enum class State : std::uint8_t { idle, sounding };
 
         // Real-time safe. Invalid settings are rejected (returns false) and the previous ones kept.
-        // Changing the MIDI channel never orphans a note: its Note Off uses the channel of its Note On.
+        // Changing the MIDI channel or transposition never orphans a note: its Note Off uses the
+        // channel and output note of its Note On.
         bool setSettings (const Settings& newSettings) noexcept;
         const Settings& getSettings() const noexcept { return settings; }
 
@@ -103,7 +106,8 @@ namespace bass2midi
 
         // Diagnostics (read on the same thread, or copied out through atomics by the host).
         State getState() const noexcept { return soundingNote >= 0 ? State::sounding : State::idle; }
-        int getSoundingNote() const noexcept { return soundingNote; }
+        int getSoundingNote() const noexcept { return soundingNote; }             // played (detected) note
+        int getSoundingOutputNote() const noexcept { return soundingOutputNote; } // note sent as MIDI
         int getLastVelocity() const noexcept { return lastVelocity; }
         bool isOnsetPending() const noexcept { return onsetFramesLeft > 0; }
 
@@ -124,7 +128,7 @@ namespace bass2midi
         int releaseHoldFrames = 12, unvoicedReleaseFrames = 80, changeFrames = 4, octaveFrames = 16;
         int lookbackFrames = 8, holdFrames = 10, onsetValidFrames = 48, settleFrames = 16;
 
-        int soundingNote = -1, soundingChannel = 1, lastVelocity = 0;
+        int soundingNote = -1, soundingOutputNote = -1, soundingChannel = 1, lastVelocity = 0;
         int candidateNote = -1, candidateFrames = 0;
         int quietFrames = 0, unvoicedFrames = 0;
         int onsetFramesLeft = 0, framesSinceOnset = 1 << 20;
