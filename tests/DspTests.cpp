@@ -82,7 +82,7 @@ TEST_CASE ("YIN config validation")
     YinPitchEstimator::Config config;
     config.windowSamples = 1000;
     config.minLagSamples = 2;
-    config.maxLagSamples = 600; // integration 400 < maxLag
+    config.maxLagSamples = 900; // integration 100 < maxLag / 4
     CHECK_FALSE (config.isValid());
 
     YinPitchEstimator estimator;

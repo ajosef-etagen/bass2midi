@@ -30,8 +30,16 @@ namespace bass2midi
             int maxLagSamples = 1024;  // longest period searched (sets the lowest frequency)
             double threshold = 0.15;   // absolute d'(tau) threshold, dimensionless (paper: 0.10-0.15)
 
-            // Requires 2 <= minLag < maxLag and an integration length W = window - maxLag >= maxLag,
-            // i.e. at least two periods of the lowest searched frequency inside the window.
+            // Sub-octave check (0 disables): after the threshold step picks lag tau, prefer the local
+            // d' minimum near 2*tau when d'(2*tau) < subOctaveRatio * d'(tau) and d'(tau) > subOctaveFloor.
+            // Counters YIN's typical octave-up error on a weak fundamental (strong 2nd harmonic).
+            // Repeated while 2*tau stays inside the lag range.
+            double subOctaveRatio = 0.0;
+            double subOctaveFloor = 0.02;
+
+            // Requires 2 <= minLag < maxLag and an integration length W = window - maxLag of at least
+            // max(minLag, maxLag / 4). W >= maxLag (two periods of the lowest frequency in the window)
+            // is the classic choice; shorter W trades robustness for a shorter window.
             bool isValid() const noexcept;
 
             // Lags covering [lowestHz, highestHz] at the given rate, window = two longest periods.

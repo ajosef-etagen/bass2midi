@@ -2,7 +2,7 @@
 
 #include "bass2midi/AnalysisFramer.h"
 #include "bass2midi/NoteStateMachine.h"
-#include "bass2midi/YinPitchEstimator.h"
+#include "bass2midi/MultiResolutionPitchTracker.h"
 
 #include <juce_audio_devices/juce_audio_devices.h>
 
@@ -14,7 +14,8 @@ class MidiOutputSender;
 // Audio-device callback: runs pitch analysis and the note state machine on one selected active
 // input channel, and hands the resulting MIDI events to the MidiOutputSender.
 //
-// Pipeline per analysis frame: YIN (full V1 range) -> NoteStateMachine -> lock-free MIDI FIFO.
+// Pipeline per analysis frame: MultiResolutionPitchTracker (pitch-adaptive YIN windows over the V1
+// range) -> NoteStateMachine -> lock-free MIDI FIFO.
 //
 // Real-time rules: audioDeviceIOCallbackWithContext never allocates, locks, logs or touches the
 // UI. User settings arrive through atomics and are applied at block start; everything the UI shows
@@ -27,12 +28,9 @@ class MidiOutputSender;
 class AudioEngine final : public juce::AudioIODeviceCallback
 {
 public:
-    // Reference analysis range: E1 and G4 each with > 1 semitone margin. Same values as the
-    // offline "full-range-yin" setup so live behaviour matches the evaluation report.
-    static constexpr double analysisLowestHz = 38.0;
-    static constexpr double analysisHighestHz = 420.0;
+    // Analysis: MultiResolutionPitchTracker defaults (38-420 Hz) and a 2.5 ms hop - the same as the
+    // offline "multires-yin+nsm" setup, so live behaviour matches the evaluation report.
     static constexpr double analysisHopSeconds = 0.0025;
-    static constexpr double yinThreshold = 0.15;
     static constexpr double onsetSettleWindowFraction = 0.75; // of the analysis window, see NoteStateMachine
 
     explicit AudioEngine (MidiOutputSender& sender);
@@ -45,7 +43,8 @@ public:
         double windowRmsDbfs = -120.0;
         double sampleRateHz = 0.0;
         int blockSize = 0;
-        int windowSamples = 0;
+        int windowSamples = 0;   // longest analysis window (frame)
+        int lastRungWindowSamples = 0; // window of the rung that produced the latest estimate
         int hopSamples = 0;
         double worstCallbackMs = 0.0;
         double averageCallbackMs = 0.0;
@@ -85,7 +84,7 @@ private:
     MidiOutputSender& midiSender;
 
     bass2midi::AnalysisFramer framer;
-    bass2midi::YinPitchEstimator estimator;
+    bass2midi::MultiResolutionPitchTracker tracker;
     bass2midi::NoteStateMachine noteMachine;
     bass2midi::NoteStateMachine::Settings noteSettings; // audio thread copy (frame timing set at device start)
     bool analysisReady = false;
@@ -104,7 +103,7 @@ private:
     std::atomic<bool> lastValid { false };
     std::atomic<double> lastFrequencyHz { 0.0 }, lastClarity { 0.0 }, lastRmsLinear { 0.0 };
     std::atomic<double> sampleRateHz { 0.0 };
-    std::atomic<int> blockSize { 0 }, windowSamples { 0 }, hopSamples { 0 };
+    std::atomic<int> blockSize { 0 }, windowSamples { 0 }, hopSamples { 0 }, lastRungWindowSamples { 0 };
     std::atomic<int> soundingNote { -1 }, playedNote { -1 }, lastVelocity { 0 }, noteOnCount { 0 };
 
     // Callback cost, measured with the high-resolution tick counter (lock- and allocation-free).

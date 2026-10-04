@@ -9,6 +9,7 @@
 
 #include "bass2midi/AnalysisFramer.h"
 #include "bass2midi/MidiNoteUtils.h"
+#include "bass2midi/MultiResolutionPitchTracker.h"
 #include "bass2midi/NoteStateMachine.h"
 #include "bass2midi/YinPitchEstimator.h"
 
@@ -170,9 +171,25 @@ namespace
     struct EvalSetup
     {
         std::string name;
-        std::function<ReferenceSetup (double)> analysis;
+        std::function<ReferenceSetup (double)> analysis; // frame (window) and hop; YIN config for plain setups
         bool stateMachine = false;
+        bool multiRes = false;                           // MultiResolutionPitchTracker instead of plain YIN
     };
+
+    // Frame/hop plan for the multi-resolution tracker: frame = its longest rung, hop as full-range-yin.
+    ReferenceSetup multiResolutionPlan (double sampleRateHz)
+    {
+        MultiResolutionPitchTracker tracker;
+        if (! tracker.prepare (sampleRateHz, {}))
+        {
+            std::cerr << "invalid multi-resolution settings\n";
+            std::exit (2);
+        }
+        ReferenceSetup plan = fullRangeYin (sampleRateHz);
+        plan.name = "multi-resolution-yin";
+        plan.yin.windowSamples = tracker.getFrameSamples();
+        return plan;
+    }
 
     std::unique_ptr<Decider> makeDecider (const EvalSetup& setup, const ReferenceSetup& analysis, double sampleRateHz)
     {
@@ -234,12 +251,15 @@ namespace
     }
 
     // Runs one analysis setup over one signal: onFrame (candidate, hopPeakLinear, frameEnd).
-    void runSignal (const ReferenceSetup& setup, double sampleRateHz, const std::vector<float>& signal,
+    void runSignal (const ReferenceSetup& setup, bool multiRes, double sampleRateHz, const std::vector<float>& signal,
                     const std::function<void (const PitchCandidate&, double, std::int64_t)>& onFrame)
     {
         YinPitchEstimator estimator;
+        MultiResolutionPitchTracker tracker;
         AnalysisFramer framer;
-        if (! estimator.prepare (sampleRateHz, setup.yin) || ! framer.prepare (setup.yin.windowSamples, setup.hopSamples))
+        const bool analysisReady = multiRes ? tracker.prepare (sampleRateHz, {}) && tracker.getFrameSamples() == setup.yin.windowSamples
+                                            : estimator.prepare (sampleRateHz, setup.yin);
+        if (! analysisReady || ! framer.prepare (setup.yin.windowSamples, setup.hopSamples))
         {
             std::cerr << "invalid setup " << setup.name << " at " << sampleRateHz << " Hz\n";
             std::exit (2);
@@ -258,7 +278,7 @@ namespace
                 float hopPeak = 0.0f;
                 for (int i = window - hop; i < window; ++i)
                     hopPeak = std::max (hopPeak, std::abs (frame[i]));
-                onFrame (estimator.estimate (frame), static_cast<double> (hopPeak), end);
+                onFrame (multiRes ? tracker.estimate (frame).pitch : estimator.estimate (frame), static_cast<double> (hopPeak), end);
             });
         }
     }
@@ -286,7 +306,7 @@ namespace
         std::vector<Event> events;
         std::vector<double> centsErrors;
 
-        runSignal (setup, spec.sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
+        runSignal (setup, evalSetup.multiRes, spec.sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
         {
             decider->process (c, hopPeak, end, events);
 
@@ -418,7 +438,7 @@ namespace
         auto decider = makeDecider (evalSetup, setup, sampleRateHz);
         std::vector<Event> events;
 
-        runSignal (setup, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
+        runSignal (setup, evalSetup.multiRes, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
         {
             decider->process (c, hopPeak, end, events);
         });
@@ -463,7 +483,7 @@ namespace
         auto decider = makeDecider (evalSetup, setup, sampleRateHz);
         std::vector<Event> events;
 
-        runSignal (setup, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
+        runSignal (setup, evalSetup.multiRes, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
         {
             ++r.frames;
             r.validFrames += c.valid ? 1 : 0;
@@ -579,7 +599,8 @@ namespace
                "I/O latency and the host block delay (add up to one block, e.g. 64 samples = 1.3 ms at 48 kHz).\n\n";
 
         out << "Setups: `warf-like-yin` and `full-range-yin` use the reference debounce rule (Warf defaults); "
-               "`full-range-yin+nsm` feeds `full-range-yin` into the Bass2MIDI `NoteStateMachine` with default settings.\n\n";
+               "`full-range-yin+nsm` feeds `full-range-yin` into the Bass2MIDI `NoteStateMachine` with default settings; "
+               "`multires-yin+nsm` uses the `MultiResolutionPitchTracker` (pitch-adaptive windows, sub-octave check) instead.\n\n";
 
         out << "Columns: cases | first Note On correct | missed (no Note On) | first Note On octave error | "
                "first Note On other wrong note | extra Note Ons beyond the first (duplicates/wrong) | "
@@ -732,6 +753,7 @@ int main (int argc, char** argv)
         { "warf-like-yin", warfLikeYin, false },
         { "full-range-yin", fullRangeYin, false },
         { "full-range-yin+nsm", fullRangeYin, true },
+        { "multires-yin+nsm", multiResolutionPlan, true, true },
     };
 
     std::vector<SequenceSpec> sequenceSpecs;

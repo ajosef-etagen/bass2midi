@@ -226,7 +226,7 @@ void MainComponent::timerCallback()
     text << "Analysed input\n"
          << "  channel        " << (activeInputNames.isEmpty() ? juce::String ("none enabled") : inputChannelBox.getText()) << "\n"
          << "  peak           " << juce::String (peakDbfs, 1) << " dBFS" << (displayedPeakLinear >= 0.99f ? "  CLIPPING" : "") << "\n"
-         << "Pitch analysis (YIN, 38-420 Hz)\n"
+         << "Pitch analysis (multi-resolution YIN, 38-420 Hz)\n"
          << "  clarity        " << juce::String (s.clarity, 3) << "\n"
          << "  window level   " << juce::String (s.windowRmsDbfs, 1) << " dBFS RMS\n";
 
@@ -242,7 +242,8 @@ void MainComponent::timerCallback()
                  << ms (device->getInputLatencyInSamples()) << ", driver-reported)\n";
 
         text << "Analysis\n"
-             << "  window         " << s.windowSamples << " samples (" << ms (s.windowSamples) << ")\n"
+             << "  window         " << s.lastRungWindowSamples << " samples (" << ms (s.lastRungWindowSamples)
+             << ") of max " << s.windowSamples << " (" << ms (s.windowSamples) << ")\n"
              << "  hop            " << s.hopSamples << " samples (" << ms (s.hopSamples) << ")\n"
              << "Callback cost\n"
              << "  average        " << juce::String (s.averageCallbackMs, 3) << " ms\n"

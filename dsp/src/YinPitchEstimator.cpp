@@ -10,8 +10,10 @@ namespace bass2midi
         const int integrationSamples = windowSamples - maxLagSamples;
         return minLagSamples >= 2
             && maxLagSamples > minLagSamples
-            && integrationSamples >= maxLagSamples
-            && threshold > 0.0 && threshold < 1.0;
+            && integrationSamples >= std::max (minLagSamples, maxLagSamples / 4)
+            && threshold > 0.0 && threshold < 1.0
+            && subOctaveRatio >= 0.0 && subOctaveRatio < 1.0
+            && subOctaveFloor >= 0.0 && subOctaveFloor < 1.0;
     }
 
     YinPitchEstimator::Config YinPitchEstimator::Config::forFrequencyRange (double sampleRateHz, double lowestHz,
@@ -68,19 +70,25 @@ namespace bass2midi
         }
         result.windowRmsLinear = std::sqrt (energyPrefix[static_cast<size_t> (n)] / static_cast<double> (n));
 
-        // r(tau) = IFFT( X * conj(Y) ), x = whole window, y = first W samples.
+        // r(tau) = IFFT( X * conj(Y) ), x = whole window, y = first W samples. Both real signals are
+        // transformed with one complex FFT of z = x + i*y and separated by conjugate symmetry:
+        //   X_k = (Z_k + conj Z_{N-k}) / 2,   Y_k = (Z_k - conj Z_{N-k}) / (2i)
         for (int i = 0; i < fftSize; ++i)
         {
             const double s = i < n ? static_cast<double> (window[i]) : 0.0;
-            spectrumX[static_cast<size_t> (i)] = { s, 0.0 };
-            spectrumY[static_cast<size_t> (i)] = { i < integration ? s : 0.0, 0.0 };
+            spectrumY[static_cast<size_t> (i)] = { s, i < integration ? s : 0.0 };
         }
 
-        fft.perform (spectrumX.data(), false);
         fft.perform (spectrumY.data(), false);
 
-        for (int i = 0; i < fftSize; ++i)
-            spectrumX[static_cast<size_t> (i)] *= std::conj (spectrumY[static_cast<size_t> (i)]);
+        for (int k = 0; k < fftSize; ++k)
+        {
+            const auto zk = spectrumY[static_cast<size_t> (k)];
+            const auto zMirror = std::conj (spectrumY[static_cast<size_t> ((fftSize - k) % fftSize)]);
+            const auto xk = 0.5 * (zk + zMirror);
+            const auto yk = std::complex<double> (0.0, -0.5) * (zk - zMirror);
+            spectrumX[static_cast<size_t> (k)] = xk * std::conj (yk);
+        }
 
         fft.perform (spectrumX.data(), true);
 
@@ -126,6 +134,34 @@ namespace bass2midi
         {
             result.clarity = std::clamp (1.0 - cmndf[static_cast<size_t> (bestLag)], 0.0, 1.0);
             return result;
+        }
+
+        // Sub-octave check: examine the d' minimum near twice the chosen lag (+-4 % search).
+        while (true)
+        {
+            const int searchLow = static_cast<int> (std::floor (2.0 * lagEstimate * 0.96));
+            const int searchHigh = static_cast<int> (std::ceil (2.0 * lagEstimate * 1.04));
+            if (searchHigh >= maxLag)
+                break; // twice the period lies outside the lag range: not examined
+
+            result.subOctaveChecked = true;
+            if (config.subOctaveRatio <= 0.0)
+                break;
+
+            int candidate = searchLow;
+            for (int tau = searchLow; tau <= searchHigh; ++tau)
+                if (cmndf[static_cast<size_t> (tau)] < cmndf[static_cast<size_t> (candidate)])
+                    candidate = tau;
+
+            const double current = cmndf[static_cast<size_t> (lagEstimate)];
+            if (current > config.subOctaveFloor && cmndf[static_cast<size_t> (candidate)] < config.subOctaveRatio * current)
+            {
+                lagEstimate = candidate;
+                result.subOctaveChecked = false; // re-evaluated for the new lag
+                ++result.subOctaveSwitches;
+                continue;
+            }
+            break;
         }
 
         // Step 5: parabolic interpolation (minLag >= 2 and lagEstimate < maxLag keep tau +/- 1 in range).

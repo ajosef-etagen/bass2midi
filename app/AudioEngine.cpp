@@ -18,22 +18,21 @@ void AudioEngine::audioDeviceAboutToStart (juce::AudioIODevice* device)
 {
     // Called before callbacks start (not concurrently with them), so allocation is allowed here.
     const auto rate = device->getCurrentSampleRate();
-    const auto config = bass2midi::YinPitchEstimator::Config::forFrequencyRange (rate, analysisLowestHz,
-                                                                                 analysisHighestHz, yinThreshold);
     const auto hop = juce::jmax (1, (int) std::lround (rate * analysisHopSeconds));
 
-    analysisReady = estimator.prepare (rate, config) && framer.prepare (config.windowSamples, hop);
+    analysisReady = tracker.prepare (rate, {}) && framer.prepare (tracker.getFrameSamples(), hop);
+    const int frameSamples = tracker.getFrameSamples();
 
     // Frame timing of the state machine follows the analysis framing at this sample rate.
     noteSettings.frameIntervalSeconds = (double) hop / rate;
-    noteSettings.onsetSettleMs = onsetSettleWindowFraction * 1000.0 * (double) config.windowSamples / rate;
+    noteSettings.onsetSettleMs = onsetSettleWindowFraction * 1000.0 * (double) frameSamples / rate;
     noteMachine.reset();
     appliedSettingsVersion = -1; // re-apply user settings on the first block
     soundingNote.store (-1);
 
     sampleRateHz.store (rate);
     blockSize.store (device->getCurrentBufferSizeSamples());
-    windowSamples.store (config.windowSamples);
+    windowSamples.store (frameSamples);
     hopSamples.store (hop);
     lastValid.store (false);
     resetStatsRequested.store (true);
@@ -121,7 +120,9 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
 
 void AudioEngine::handleFrame (const float* window) noexcept
 {
-    const auto candidate = estimator.estimate (window);
+    const auto estimate = tracker.estimate (window);
+    const auto& candidate = estimate.pitch;
+    lastRungWindowSamples.store (estimate.windowSamples, std::memory_order_relaxed);
     lastValid.store (candidate.valid, std::memory_order_relaxed);
     lastFrequencyHz.store (candidate.frequencyHz, std::memory_order_relaxed);
     lastClarity.store (candidate.clarity, std::memory_order_relaxed);
@@ -171,6 +172,7 @@ AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
     s.sampleRateHz = sampleRateHz.load();
     s.blockSize = blockSize.load();
     s.windowSamples = windowSamples.load();
+    s.lastRungWindowSamples = lastRungWindowSamples.load();
     s.hopSamples = hopSamples.load();
     s.soundingNote = soundingNote.load();
     s.playedNote = playedNote.load();
