@@ -37,6 +37,14 @@ namespace bass2midi
             double subOctaveRatio = 0.0;
             double subOctaveFloor = 0.02;
 
+            // Silence-edge check (0 disables): report no pitch when the integration segment at the start
+            // of the window (the first W samples, which every lag is compared against) or the newest
+            // quarter of the window is more than silenceDropDb below the RMS of the whole window. Such a
+            // window straddles an attack or a mute; comparing near-silent samples with each other yields
+            // deceptively low d' (clarity ~1) at arbitrary lags. Natural decay stays far below this
+            // drop within one window.
+            double silenceDropDb = 0.0;
+
             // Requires 2 <= minLag < maxLag and an integration length W = window - maxLag of at least
             // max(minLag, maxLag / 4). W >= maxLag (two periods of the lowest frequency in the window)
             // is the classic choice; shorter W trades robustness for a shorter window.

@@ -17,5 +17,6 @@ namespace bass2midi
         // Octave diagnostics (YIN with sub-octave check enabled):
         bool subOctaveChecked = false; // the lag at twice the reported period was inside the search range and examined
         int subOctaveSwitches = 0;     // how often the estimate was moved down an octave by the check
+        bool straddlesSilence = false; // rejected by the silence-edge check (attack or mute inside the window)
     };
 }

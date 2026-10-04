@@ -23,7 +23,7 @@ namespace
         double firstCorrectMs = -1.0; // first frame reporting the expected note, relative to onset
     };
 
-    Trace trace (int note, double fundamentalGainDb, double sampleRateHz)
+    Trace trace (int note, double fundamentalGainDb, double sampleRateHz, double noiseFloorDbfs = -90.0)
     {
         MultiResolutionPitchTracker tracker;
         REQUIRE (tracker.prepare (sampleRateHz, {}));
@@ -36,6 +36,7 @@ namespace
         spec.peakLinear = 0.3;
         spec.fundamentalGainDb = fundamentalGainDb;
         spec.seed = static_cast<std::uint32_t> (note * 131 + 17);
+        spec.noiseFloorDbfs = noiseFloorDbfs;
         const auto signal = eval::renderPluck (spec);
         const auto onset = eval::onsetSample (spec);
 
@@ -141,4 +142,26 @@ TEST_CASE ("Multi-resolution tracker: high notes are found much earlier than wit
     REQUIRE (e1.firstCorrectMs > 0.0);
     CHECK (g3.firstCorrectMs < 25.0);
     CHECK (e1.firstCorrectMs < 45.0);
+}
+
+TEST_CASE ("Multi-resolution tracker: no phantom notes when the window straddles digital silence")
+{
+    // Regression: windows that start in exact silence and hold only a few ms of a new attack compared
+    // silence with silence and reported random notes with clarity ~1 (seen as a wrong Note On when
+    // re-plucking after a mute). The silence-edge check rejects such windows.
+    for (const double rate : { 44100.0, 48000.0, 96000.0 })
+        for (const double fundamentalGainDb : { 0.0, -18.0 })
+            for (const int note : { 28, 33, 38, 43, 48, 55 })
+            {
+                CAPTURE (rate);
+                CAPTURE (fundamentalGainDb);
+                CAPTURE (note);
+                const auto t = trace (note, fundamentalGainDb, rate, -200.0);
+
+                int wrong = 0;
+                for (const auto& [detected, frames] : t.notes)
+                    if (detected != note)
+                        wrong += frames;
+                CHECK (wrong <= 1);
+            }
 }

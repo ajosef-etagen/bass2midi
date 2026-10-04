@@ -49,6 +49,7 @@ namespace bass2midi
             double edgeGuard = 0.06;              // fraction of a shorter rung's lag range kept clear at the top
             double subOctaveRatio = 0.5;          // see YinPitchEstimator::Config
             double subOctaveFloor = 0.02;
+            double silenceDropDb = 20.0;          // see YinPitchEstimator::Config (all rungs)
 
             bool isValid() const noexcept;
         };

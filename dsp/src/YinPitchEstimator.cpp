@@ -13,7 +13,8 @@ namespace bass2midi
             && integrationSamples >= std::max (minLagSamples, maxLagSamples / 4)
             && threshold > 0.0 && threshold < 1.0
             && subOctaveRatio >= 0.0 && subOctaveRatio < 1.0
-            && subOctaveFloor >= 0.0 && subOctaveFloor < 1.0;
+            && subOctaveFloor >= 0.0 && subOctaveFloor < 1.0
+            && silenceDropDb >= 0.0 && std::isfinite (silenceDropDb);
     }
 
     YinPitchEstimator::Config YinPitchEstimator::Config::forFrequencyRange (double sampleRateHz, double lowestHz,
@@ -69,6 +70,21 @@ namespace bass2midi
             energyPrefix[static_cast<size_t> (i) + 1] = energyPrefix[static_cast<size_t> (i)] + s * s;
         }
         result.windowRmsLinear = std::sqrt (energyPrefix[static_cast<size_t> (n)] / static_cast<double> (n));
+
+        if (config.silenceDropDb > 0.0)
+        {
+            const int tailStart = n - n / 4;
+            const double headMeanSquare = energyPrefix[static_cast<size_t> (integration)] / static_cast<double> (integration);
+            const double tailMeanSquare = (energyPrefix[static_cast<size_t> (n)] - energyPrefix[static_cast<size_t> (tailStart)])
+                                        / static_cast<double> (n - tailStart);
+            const double windowMeanSquare = energyPrefix[static_cast<size_t> (n)] / static_cast<double> (n);
+            const double allowedRatio = std::pow (10.0, -config.silenceDropDb / 10.0); // power ratio
+            if (headMeanSquare < allowedRatio * windowMeanSquare || tailMeanSquare < allowedRatio * windowMeanSquare)
+            {
+                result.straddlesSilence = true;
+                return result;
+            }
+        }
 
         // r(tau) = IFFT( X * conj(Y) ), x = whole window, y = first W samples. Both real signals are
         // transformed with one complex FFT of z = x + i*y and separated by conjugate symmetry:

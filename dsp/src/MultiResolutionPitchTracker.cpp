@@ -15,6 +15,8 @@ namespace bass2midi
             return false;
         if (! (threshold > 0.0 && threshold < 1.0 && earlyMinClarity > 0.0 && earlyMinClarity <= 1.0))
             return false;
+        if (! (silenceDropDb >= 0.0 && std::isfinite (silenceDropDb)))
+            return false;
         if (! (subOctaveRatio >= 0.0 && subOctaveRatio < 1.0 && subOctaveFloor >= 0.0 && subOctaveFloor < 1.0))
             return false;
 
@@ -62,6 +64,7 @@ namespace bass2midi
             c.threshold = settings.threshold;
             c.subOctaveRatio = settings.subOctaveRatio;
             c.subOctaveFloor = settings.subOctaveFloor;
+            c.silenceDropDb = settings.silenceDropDb;
 
             if (! estimators[static_cast<size_t> (i)].prepare (sampleRateHz, c))
                 return false;
