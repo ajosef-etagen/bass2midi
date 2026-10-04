@@ -23,6 +23,7 @@ else()
 endif()
 
 add_subdirectory(dsp)
+add_subdirectory(song)
 
 if(BASS2MIDI_BUILD_TESTS)
     include(FetchContent)
@@ -46,9 +47,13 @@ if(BASS2MIDI_BUILD_TESTS)
     add_executable(bass2midi_analyze eval/AnalyzeRecording.cpp)
     target_link_libraries(bass2midi_analyze PRIVATE bass2midi_eval bass2midi_warnings)
 
+    add_executable(bass2midi_songinfo eval/SongInfo.cpp)
+    target_link_libraries(bass2midi_songinfo PRIVATE bass2midi_song bass2midi_warnings)
+
     enable_testing()
-    add_executable(bass2midi_tests tests/DspTests.cpp tests/NoteStateMachineTests.cpp tests/MultiResolutionTests.cpp)
-    target_link_libraries(bass2midi_tests PRIVATE bass2midi_eval doctest::doctest bass2midi_warnings)
+    add_executable(bass2midi_tests tests/DspTests.cpp tests/NoteStateMachineTests.cpp tests/MultiResolutionTests.cpp tests/SongTests.cpp)
+    target_link_libraries(bass2midi_tests PRIVATE bass2midi_eval bass2midi_song doctest::doctest bass2midi_warnings)
+    target_compile_definitions(bass2midi_tests PRIVATE BASS2MIDI_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
     add_test(NAME bass2midi_tests COMMAND bass2midi_tests)
 endif()
 
