@@ -51,7 +51,7 @@ private:
     juce::Label gateLabel { {}, "Gate (dBFS):" };
     juce::Slider gateSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight };
     int currentMidiChannel = defaultMidiChannel;
-    juce::TextButton testNoteButton { "Send test note (C3)" };
+    juce::TextButton testNoteButton { "Test note (MIDI 48)" };
     juce::TextButton resetStatsButton { "Reset timing stats" };
     bool testNoteSounding = false;
 

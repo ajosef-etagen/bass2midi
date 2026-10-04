@@ -47,7 +47,11 @@ libxinerama-dev libxcursor-dev libxcomposite-dev libxext-dev`), but macOS is the
    above it (default −45 dBFS). Plucks must exceed the gate to start a note.
 4. In MainStage, set a software instrument channel strip's MIDI input to `Bass2MIDI` and the channel to the one
    chosen in Bass2MIDI (default 1).
-5. **Send test note (C3)** checks the route; then play. The big readout shows the MIDI note being sent.
+5. **Test note (MIDI 48)** checks the route; then play. The big readout shows the MIDI note being sent.
+
+Note names: Bass2MIDI calls MIDI 60 "C4" (scientific pitch, open low E = E1 = MIDI 28). Logic and MainStage call
+MIDI 60 "C3", so the same notes appear one octave lower there (open low E = "E0"). The MIDI numbers are identical;
+the readout shows both names.
 
 The virtual port does not appear in Audio MIDI Setup's MIDI Studio window; it is listed in the MIDI input choices of
 other apps (MainStage, or e.g. the free *MIDI Monitor* for checking).

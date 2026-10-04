@@ -188,7 +188,11 @@ void MainComponent::timerCallback()
     // Big readout: the MIDI note currently on (what MainStage hears), else the raw pitch estimate.
     if (s.soundingNote >= 0)
     {
-        pitchReadout.setText ("MIDI  " + juce::String (bass2midi::midi::noteName (s.soundingNote))
+        // Names use middle C = C4; Logic/MainStage call MIDI 60 "C3", one octave lower. The MIDI
+        // number is shown so the two can be matched.
+        pitchReadout.setText ("MIDI " + juce::String (s.soundingNote) + "  "
+                                  + juce::String (bass2midi::midi::noteName (s.soundingNote))
+                                  + " (MainStage: " + juce::String (bass2midi::midi::noteName (s.soundingNote - 12)) + ")"
                                   + "   vel " + juce::String (s.lastVelocity),
                               juce::dontSendNotification);
     }
