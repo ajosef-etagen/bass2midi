@@ -6,13 +6,16 @@ Real-time, monophonic electric bass to MIDI for live use on macOS:
 Electric bass -> audio interface -> Bass2MIDI (standalone app) -> virtual MIDI port "Bass2MIDI" -> MainStage
 ```
 
-**Status: Phase 1, first playable version.** The app converts the bass on the selected input channel into MIDI
-Note On/Off with velocity on the virtual port `Bass2MIDI`. Known limits of this version (measured in
+**Status: Phase 2 (part 1).** The app converts the bass on the selected input channel into MIDI Note On/Off with
+velocity on the virtual port `Bass2MIDI`, using pitch-adaptive analysis windows. Known limits (measured on a
+synthetic corpus, see [`docs/phase2-multires.md`](docs/phase2-multires.md) and
 [`docs/phase1-statemachine.md`](docs/phase1-statemachine.md)):
 
-- Note On latency is about one analysis window, roughly 50 ms (plain YIN; faster attack detection is Phase 2).
-- Re-plucking the **same** note while it still rings is often merged into one note; mute briefly between repeated
-  notes. Octave jumps without a clear new attack take about 40 ms longer (octave-error protection).
+- Note On latency: about 15 ms for high notes, 22 ms median on the D/G strings, 32 ms on the A string,
+  40 ms on the low E string.
+- Re-plucking the **same** note while it still rings is merged into one note; mute briefly between repeated notes.
+  Octave jumps without a clear new attack take about 30 ms longer (octave-error protection).
+- Use 48 kHz (or at least 128 samples buffer at 96 kHz): low notes cost up to ~0.7 ms per analysis frame.
 - Only synthetic signals have been measured so far; real DI recordings are needed for tuning.
 
 See [`docs/phase0-baseline.md`](docs/phase0-baseline.md) for the reference measurements and [`CLAUDE.md`](CLAUDE.md)
