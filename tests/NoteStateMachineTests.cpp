@@ -17,6 +17,7 @@ namespace
     {
         FrameFeatures f;
         f.hopPeakLinear = std::pow (10.0, peakDbfs / 20.0);
+        f.pitch.windowRmsLinear = f.hopPeakLinear * 0.5; // a plausible crest factor
         if (note > 0.0)
         {
             f.pitch.valid = true;
@@ -346,4 +347,29 @@ TEST_CASE ("Note state machine: transposition applies to output and never orphan
     CHECK (low.feed (frame (28.0, -10.0), 50) == 0);
     CHECK (low.feed (frame (40.0, -10.0), 2) == 1);
     CHECK (low.events.back().note == 10);
+}
+
+TEST_CASE ("Note state machine: release glides and murky frames do not move a note without an onset")
+{
+    // Seen on DI recordings: while a fretting finger lifts, the decaying string glides through
+    // neighbouring pitches 20-30 dB below the attack with clarity ~0.86-0.96, which used to emit
+    // a chain of short wrong notes.
+    Harness h;
+    h.feed (silence(), 20);
+    h.feed (frame (31.0, -10.0), 40);
+    REQUIRE (h.machine.getSoundingNote() == 31);
+
+    // Near the note's level but murky (below changeMinClarity = 0.93): no change.
+    CHECK (h.feed (frame (32.0, -12.0, 0.90), 60) == 0);
+    CHECK (h.machine.getSoundingNote() == 31);
+
+    // Near the level and clear: a legato change still goes through after noteChangeConfirmMs.
+    CHECK (h.feed (frame (32.0, -12.0, 0.97), 3) == 0);
+    CHECK (h.feed (frame (32.0, -12.0, 0.97)) == 2);
+    REQUIRE (h.machine.getSoundingNote() == 32);
+
+    // The string decays 25 dB (beyond changeMaxDropDb = 20) and glides while the finger lifts:
+    // clear pitch, but no change and no new note.
+    CHECK (h.feed (frame (30.0, -37.0, 0.97), 60) == 0);
+    CHECK (h.machine.getSoundingNote() == 32);
 }

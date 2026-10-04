@@ -72,6 +72,11 @@ namespace bass2midi
             int attackFrames = 2;                 // consistent frames for Note On from silence / after onset
             double noteChangeConfirmMs = 10.0;    // consistent new note while sounding, no onset
             double octaveChangeConfirmMs = 40.0;  // same, for +-12/24 semitone jumps (high-cost transition)
+            double changeMinClarity = 0.93;       // a frame only counts towards a change without onset at this clarity
+            double changeMaxDropDb = 20.0;        // ... and with the analysis-window RMS at most this far below the
+                                                  // highest window RMS since the note started (release glides while a
+                                                  // finger lifts are quieter and murkier). Window RMS, not the hop
+                                                  // envelope: the envelope holds the old level for envelopeHoldMs.
             double onsetRiseDb = 9.0;             // envelope rise that counts as a new attack
             double onsetLookbackMs = 20.0;        // window for the rise reference (lowest recent envelope)
             double onsetValidMs = 120.0;          // how long an onset may still trigger a (re)attack
@@ -133,6 +138,7 @@ namespace bass2midi
         int quietFrames = 0, unvoicedFrames = 0;
         int onsetFramesLeft = 0, framesSinceOnset = 1 << 20;
         double attackPeakLinear = 0.0;
+        double noteRmsPeakLinear = 0.0; // highest analysis-window RMS since the sounding note started
 
         // Ring buffers of the last maxLookbackFrames hop peaks and envelope values (dBFS).
         std::array<double, maxLookbackFrames> hopPeakDb {}, envelopeDb {};

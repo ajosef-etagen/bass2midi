@@ -14,7 +14,8 @@ namespace bass2midi
             && threshold > 0.0 && threshold < 1.0
             && subOctaveRatio >= 0.0 && subOctaveRatio < 1.0
             && subOctaveFloor >= 0.0 && subOctaveFloor < 1.0
-            && silenceDropDb >= 0.0 && std::isfinite (silenceDropDb);
+            && silenceDropDb >= 0.0 && std::isfinite (silenceDropDb)
+            && levelChangeDb >= 0.0 && std::isfinite (levelChangeDb);
     }
 
     YinPitchEstimator::Config YinPitchEstimator::Config::forFrequencyRange (double sampleRateHz, double lowestHz,
@@ -71,15 +72,25 @@ namespace bass2midi
         }
         result.windowRmsLinear = std::sqrt (energyPrefix[static_cast<size_t> (n)] / static_cast<double> (n));
 
-        if (config.silenceDropDb > 0.0)
+        if (config.silenceDropDb > 0.0 || config.levelChangeDb > 0.0)
         {
             const int tailStart = n - n / 4;
             const double headMeanSquare = energyPrefix[static_cast<size_t> (integration)] / static_cast<double> (integration);
             const double tailMeanSquare = (energyPrefix[static_cast<size_t> (n)] - energyPrefix[static_cast<size_t> (tailStart)])
                                         / static_cast<double> (n - tailStart);
             const double windowMeanSquare = energyPrefix[static_cast<size_t> (n)] / static_cast<double> (n);
-            const double allowedRatio = std::pow (10.0, -config.silenceDropDb / 10.0); // power ratio
-            if (headMeanSquare < allowedRatio * windowMeanSquare || tailMeanSquare < allowedRatio * windowMeanSquare)
+            bool reject = false;
+            if (config.silenceDropDb > 0.0)
+            {
+                const double allowedRatio = std::pow (10.0, -config.silenceDropDb / 10.0); // power ratio
+                reject = headMeanSquare < allowedRatio * windowMeanSquare || tailMeanSquare < allowedRatio * windowMeanSquare;
+            }
+            if (config.levelChangeDb > 0.0 && ! reject)
+            {
+                const double changeRatio = std::pow (10.0, config.levelChangeDb / 10.0);
+                reject = tailMeanSquare > changeRatio * headMeanSquare || headMeanSquare > changeRatio * tailMeanSquare;
+            }
+            if (reject)
             {
                 result.straddlesSilence = true;
                 return result;

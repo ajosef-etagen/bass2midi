@@ -35,12 +35,16 @@ if(BASS2MIDI_BUILD_TESTS)
     # Offline evaluation support: synthetic signals and reference setups. Never linked into the app.
     add_library(bass2midi_eval STATIC
         eval/SyntheticBass.cpp
-        eval/ReferenceSetups.cpp)
+        eval/ReferenceSetups.cpp
+        eval/WavFile.cpp)
     target_include_directories(bass2midi_eval PUBLIC eval)
     target_link_libraries(bass2midi_eval PUBLIC bass2midi_dsp PRIVATE bass2midi_warnings)
 
     add_executable(bass2midi_baseline eval/BaselineEval.cpp)
     target_link_libraries(bass2midi_baseline PRIVATE bass2midi_eval bass2midi_warnings)
+
+    add_executable(bass2midi_analyze eval/AnalyzeRecording.cpp)
+    target_link_libraries(bass2midi_analyze PRIVATE bass2midi_eval bass2midi_warnings)
 
     enable_testing()
     add_executable(bass2midi_tests tests/DspTests.cpp tests/NoteStateMachineTests.cpp tests/MultiResolutionTests.cpp)

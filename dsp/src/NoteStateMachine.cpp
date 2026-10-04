@@ -32,6 +32,7 @@ namespace bass2midi
             && nonNegative (releaseHoldMs) && nonNegative (unvoicedReleaseMs)
             && attackFrames >= 1
             && nonNegative (noteChangeConfirmMs) && nonNegative (octaveChangeConfirmMs)
+            && changeMinClarity > 0.0 && changeMinClarity <= 1.0 && nonNegative (changeMaxDropDb)
             && onsetRiseDb > 0.0 && std::isfinite (onsetRiseDb)
             && onsetLookbackMs > 0.0 && std::isfinite (onsetLookbackMs)
             && nonNegative (onsetValidMs)
@@ -76,6 +77,7 @@ namespace bass2midi
         attackPeakLinear = 0.0;
         ringWritePos = 0;
         ringCount = 0;
+        noteRmsPeakLinear = 0.0;
     }
 
     double NoteStateMachine::toDbfs (double linear) noexcept
@@ -112,6 +114,7 @@ namespace bass2midi
         quietFrames = 0;
         unvoicedFrames = 0;
         onsetFramesLeft = 0; // this attack is consumed
+        noteRmsPeakLinear = 0.0;
     }
 
     NoteStateMachine::Output NoteStateMachine::processFrame (const FrameFeatures& frame) noexcept
@@ -155,6 +158,8 @@ namespace bass2midi
         }
 
         attackPeakLinear = std::max (attackPeakLinear, frame.hopPeakLinear);
+        if (soundingNote >= 0)
+            noteRmsPeakLinear = std::max (noteRmsPeakLinear, frame.pitch.windowRmsLinear);
 
         // 2. Release on sustained low level.
         if (soundingNote >= 0)
@@ -219,7 +224,10 @@ namespace bass2midi
         if (soundingNote < 0)
         {
             if (candidateFrames >= settings.attackFrames)
+            {
                 addNoteOn (out, note);
+                noteRmsPeakLinear = frame.pitch.windowRmsLinear;
+            }
             return out;
         }
 
@@ -231,7 +239,17 @@ namespace bass2midi
             {
                 addNoteOff (out);
                 addNoteOn (out, note);
+                noteRmsPeakLinear = frame.pitch.windowRmsLinear;
             }
+            return out;
+        }
+
+        if (onsetFramesLeft <= 0
+            && (frame.pitch.clarity < settings.changeMinClarity
+                || toDbfs (frame.pitch.windowRmsLinear) < toDbfs (noteRmsPeakLinear) - settings.changeMaxDropDb))
+        {
+            // Without a new attack, only clear frames near the note's level may move it (see Settings).
+            candidateFrames = 0;
             return out;
         }
 
@@ -242,6 +260,7 @@ namespace bass2midi
         {
             addNoteOff (out);
             addNoteOn (out, note);
+            noteRmsPeakLinear = frame.pitch.windowRmsLinear;
         }
 
         return out;

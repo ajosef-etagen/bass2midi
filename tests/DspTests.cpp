@@ -247,3 +247,32 @@ TEST_CASE ("Synthetic pluck is deterministic and silent before onset")
     CHECK (peak > 0.05f);
     CHECK (peak <= 0.5f * 1.1f); // tone bounded by peakLinear, plus the short pluck noise burst
 }
+
+TEST_CASE ("YIN level-change check rejects windows that straddle an attack over background noise")
+{
+    constexpr double rate = 48000.0;
+    auto config = YinPitchEstimator::Config::forFrequencyRange (rate, 38.0, 420.0, 0.15);
+
+    // Older half: noise at -50 dBFS (not silent enough for the silence-edge check); newer half: a tone.
+    std::vector<float> window = eval::renderNoise (rate, config.windowSamples / rate + 0.01, -50.0, 5);
+    window.resize (static_cast<size_t> (config.windowSamples));
+    const auto tone = sine (110.0, rate, config.windowSamples, 0.3);
+    for (size_t i = window.size() / 2; i < window.size(); ++i)
+        window[i] += tone[i];
+
+    YinPitchEstimator plain, checked;
+    REQUIRE (plain.prepare (rate, config));
+    config.levelChangeDb = 12.0;
+    REQUIRE (checked.prepare (rate, config));
+
+    const auto withCheck = checked.estimate (window.data());
+    CHECK_FALSE (withCheck.valid);
+    CHECK (withCheck.straddlesSilence);
+
+    // A steady tone over the same noise passes the check.
+    std::vector<float> steady (window.size());
+    for (size_t i = 0; i < steady.size(); ++i)
+        steady[i] = tone[i];
+    CHECK (checked.estimate (steady.data()).valid);
+    (void) plain;
+}

@@ -50,6 +50,7 @@ namespace bass2midi
             double subOctaveRatio = 0.5;          // see YinPitchEstimator::Config
             double subOctaveFloor = 0.02;
             double silenceDropDb = 20.0;          // see YinPitchEstimator::Config (all rungs)
+            double levelChangeDb = 12.0;          // see YinPitchEstimator::Config (all rungs)
 
             bool isValid() const noexcept;
         };
