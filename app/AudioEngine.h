@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bass2midi/AnalysisFramer.h"
+#include "bass2midi/NotePalette.h"
 #include "bass2midi/NoteStateMachine.h"
 #include "bass2midi/MultiResolutionPitchTracker.h"
 
@@ -22,7 +23,9 @@ class MidiOutputSender;
 // is published through relaxed atomics, read by a message-thread timer.
 //
 // Cross-thread boundaries:
-//  - message thread -> audio thread: setAnalysedChannel, setMidiSettings (atomics + version counter)
+//  - message thread -> audio thread: setAnalysedChannel, setMidiSettings (atomics + version counter),
+//    setPalette (two 64-bit words under a sequence counter; a torn read is skipped and retried
+//    at the next block, never waited for)
 //  - audio thread -> sender thread: MidiOutputSender::pushFromAudioThread (SPSC FIFO)
 //  - audio thread -> message thread: Snapshot atomics
 class AudioEngine final : public juce::AudioIODeviceCallback
@@ -52,6 +55,9 @@ public:
         int playedNote = -1;     // detected note behind it
         int lastVelocity = 0;
         int noteOnCount = 0;     // since start, for the UI
+        int paletteSize = 0;     // notes in the applied song palette, 0 = Free mode
+        int paletteDelayed = 0;  // decisions the palette postponed (off-palette notes), since start
+        int paletteRelievedFrames = 0; // frames decided early thanks to the palette, since start
     };
 
     // Message thread.
@@ -66,6 +72,10 @@ public:
     // applies from the next note (the sounding one keeps its output note until its Note Off).
     void setMidiSettings (bool outputEnabled, int midiChannel, double gateOpenDbfs, int transposeSemitones) noexcept;
 
+    // Message thread. Song palette in played-note space (before transposition); empty = Free mode.
+    // Applied by the audio thread at the next block; a sounding note is never ended by it.
+    void setPalette (const bass2midi::NotePalette& palette) noexcept;
+
     // Message thread. Highest absolute sample value of the analysed channel since the last call.
     float takeInputPeakLinear() noexcept { return inputPeakLinear.exchange (0.0f); }
     void resetCallbackStats() noexcept { resetStatsRequested.store (true); }
@@ -78,6 +88,7 @@ public:
 
 private:
     void applyPendingSettings() noexcept;
+    void applyPendingPalette() noexcept;
     void handleFrame (const float* window) noexcept;
     void sendEvents (const bass2midi::NoteStateMachine::Output& output) noexcept;
 
@@ -100,11 +111,18 @@ private:
     std::atomic<int> pendingTransposeSemitones { 0 };
     std::atomic<int> settingsVersion { 0 };
 
+    // Seqlock for the palette: odd = write in progress.
+    std::atomic<std::uint32_t> paletteSequence { 0 };
+    std::atomic<std::uint64_t> pendingPaletteLow { 0 }, pendingPaletteHigh { 0 };
+    std::uint32_t appliedPaletteSequence = 0; // audio thread
+    bool forcePaletteApply = true;            // audio thread (set in audioDeviceAboutToStart)
+
     std::atomic<bool> lastValid { false };
     std::atomic<double> lastFrequencyHz { 0.0 }, lastClarity { 0.0 }, lastRmsLinear { 0.0 };
     std::atomic<double> sampleRateHz { 0.0 };
     std::atomic<int> blockSize { 0 }, windowSamples { 0 }, hopSamples { 0 }, lastRungWindowSamples { 0 };
     std::atomic<int> soundingNote { -1 }, playedNote { -1 }, lastVelocity { 0 }, noteOnCount { 0 };
+    std::atomic<int> paletteSize { 0 }, paletteRelievedFrames { 0 }, paletteDelayed { 0 };
 
     // Callback cost, measured with the high-resolution tick counter (lock- and allocation-free).
     std::atomic<std::int64_t> worstCallbackTicks { 0 }, totalCallbackTicks { 0 }, callbackCount { 0 };

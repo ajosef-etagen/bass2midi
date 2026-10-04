@@ -20,7 +20,8 @@ target_sources(Bass2MIDIApp PRIVATE
     Main.cpp
     MainComponent.cpp
     AudioEngine.cpp
-    MidiOutputSender.cpp)
+    MidiOutputSender.cpp
+    SongLibrary.cpp)
 
 target_compile_definitions(Bass2MIDIApp PRIVATE
     BASS2MIDI_VERSION="${PROJECT_VERSION}"
@@ -32,6 +33,7 @@ target_compile_definitions(Bass2MIDIApp PRIVATE
 target_link_libraries(Bass2MIDIApp
     PRIVATE
         bass2midi_dsp
+        bass2midi_song
         juce::juce_audio_devices
         juce::juce_audio_utils
         juce::juce_gui_basics

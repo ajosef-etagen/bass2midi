@@ -12,6 +12,8 @@ namespace
     constexpr const char* midiChannelKey = "midiChannel";
     constexpr const char* gateKey = "gateOpenDbfs";
     constexpr const char* transposeKey = "transposeSemitones";
+    constexpr const char* songLibraryKey = "songLibrary";
+    constexpr const char* selectedSongKey = "selectedSong";
 }
 
 MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (settingsToUse)
@@ -77,13 +79,38 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
         addAndMakeVisible (*c);
     midiSettingsChanged();
 
+    // Song palette: the song list is restored from the settings; a missing or unreadable file stays
+    // listed with its error and selecting it means Free mode, so a song never blocks normal use.
+    songs.restoreState (settings.getValue (songLibraryKey));
+    for (auto* label : { &songLabel, &trackLabel })
+        label->setJustificationType (juce::Justification::centredRight);
+    songBox.onChange = [this] { songChosen(); };
+    trackBox.onChange = [this] { trackChosen(); };
+    previousSongButton.onClick = [this] { stepSong (-1); };
+    nextSongButton.onClick = [this] { stepSong (1); };
+    addSongsButton.onClick = [this] { addSongs(); };
+    removeSongButton.onClick = [this] { removeSelectedSong(); };
+    previousSongButton.setTooltip ("Previous song");
+    nextSongButton.setTooltip ("Next song");
+    for (auto* c : std::initializer_list<juce::Component*> { &songLabel, &songBox, &previousSongButton, &nextSongButton,
+                                                             &addSongsButton, &removeSongButton, &trackLabel, &trackBox, &paletteLabel })
+        addAndMakeVisible (*c);
+    refreshSongControls();
+    {
+        const juce::File selected (settings.getValue (selectedSongKey));
+        for (int i = 0; i < songs.size(); ++i)
+            if (selected != juce::File() && songs[i].file == selected)
+                songBox.setSelectedId (songIdOffset + i, juce::dontSendNotification);
+    }
+    songChosen();
+
     testNoteButton.onClick = [this] { sendTestNote(); };
     testNoteButton.setEnabled (midiSender.isOpen());
     resetStatsButton.onClick = [this] { engine.resetCallbackStats(); };
     addAndMakeVisible (testNoteButton);
     addAndMakeVisible (resetStatsButton);
 
-    setSize (680, 840);
+    setSize (680, 960);
     startTimerHz (20);
 }
 
@@ -156,6 +183,121 @@ void MainComponent::midiSettingsChanged()
     settings.setValue (midiEnabledKey, enabled);
     settings.setValue (midiChannelKey, currentMidiChannel);
     settings.setValue (gateKey, gate);
+}
+
+void MainComponent::refreshSongControls()
+{
+    const auto previous = songBox.getSelectedId();
+    songBox.clear (juce::dontSendNotification);
+    songBox.addItem ("Free (no song guidance)", freeModeId);
+    for (int i = 0; i < songs.size(); ++i)
+        songBox.addItem (juce::String (i + 1) + ". " + songs[i].displayName(), songIdOffset + i);
+    songBox.setSelectedId (previous >= freeModeId && previous < songIdOffset + songs.size() ? previous : freeModeId,
+                           juce::dontSendNotification);
+}
+
+void MainComponent::songChosen()
+{
+    const int index = selectedSongIndex();
+    trackBox.clear (juce::dontSendNotification);
+    if (index >= 0)
+    {
+        const auto& entry = songs[index];
+        for (size_t t = 0; t < entry.song.tracks.size(); ++t)
+        {
+            const auto& track = entry.song.tracks[t];
+            trackBox.addItem (juce::String::fromUTF8 (track.name.c_str()) + "  (" + juce::String ((int) track.notes.size()) + " notes)",
+                              (int) t + 1);
+            trackBox.setItemEnabled ((int) t + 1, ! track.percussion && ! track.notes.empty());
+        }
+        trackBox.setSelectedId (entry.track + 1, juce::dontSendNotification);
+    }
+    trackBox.setEnabled (index >= 0 && songs[index].usable());
+    removeSongButton.setEnabled (index >= 0);
+    previousSongButton.setEnabled (songs.size() > 0);
+    nextSongButton.setEnabled (songs.size() > 0);
+    applySongPalette();
+}
+
+void MainComponent::trackChosen()
+{
+    const int index = selectedSongIndex();
+    if (index < 0)
+        return;
+    songs.setTrack (index, trackBox.getSelectedId() - 1);
+    applySongPalette();
+}
+
+void MainComponent::applySongPalette()
+{
+    const int index = selectedSongIndex();
+    bass2midi::NotePalette palette;
+    juce::String text;
+    if (index < 0)
+    {
+        text = "Free mode: every plausible bass note is accepted equally.";
+    }
+    else if (! songs[index].usable())
+    {
+        text = "Cannot use this song (" + (songs[index].error.isNotEmpty() ? songs[index].error : juce::String ("no track"))
+             + ") - running in Free mode.";
+    }
+    else
+    {
+        palette = songs[index].palette();
+        text = "Palette: " + SongLibrary::describe (palette);
+    }
+
+    engine.setPalette (palette);
+    paletteLabel.setText (text, juce::dontSendNotification);
+    paletteLabel.setTooltip (text);
+    saveSongState();
+}
+
+void MainComponent::addSongs()
+{
+    songChooser = std::make_unique<juce::FileChooser> ("Add Guitar Pro songs (.gp, .gp5)", juce::File(), SongLibrary::fileWildcard);
+    songChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles
+                                  | juce::FileBrowserComponent::canSelectMultipleItems,
+                              [this] (const juce::FileChooser& chooser)
+    {
+        int last = -1;
+        for (const auto& file : chooser.getResults())
+            last = songs.add (file);
+        if (last < 0)
+            return;
+        refreshSongControls();
+        songBox.setSelectedId (songIdOffset + last, juce::dontSendNotification);
+        songChosen();
+    });
+}
+
+void MainComponent::removeSelectedSong()
+{
+    const int index = selectedSongIndex();
+    if (index < 0)
+        return;
+    songs.remove (index);
+    songBox.setSelectedId (freeModeId, juce::dontSendNotification);
+    refreshSongControls();
+    songChosen();
+}
+
+void MainComponent::stepSong (int delta)
+{
+    // Cycles through Free mode and all songs, so Free is always one step away.
+    const int count = songs.size() + 1;
+    const int position = juce::jmax (0, songBox.getSelectedId() - freeModeId);
+    const int next = ((position + delta) % count + count) % count;
+    songBox.setSelectedId (freeModeId + next, juce::dontSendNotification);
+    songChosen();
+}
+
+void MainComponent::saveSongState()
+{
+    settings.setValue (songLibraryKey, songs.toState());
+    const int index = selectedSongIndex();
+    settings.setValue (selectedSongKey, index >= 0 ? songs[index].file.getFullPathName() : juce::String());
 }
 
 void MainComponent::sendTestNote()
@@ -256,7 +398,13 @@ void MainComponent::timerCallback()
          << "  sounding       " << (s.soundingNote >= 0 ? juce::String (bass2midi::midi::noteName (s.soundingNote)) : juce::String ("-")) << "\n"
          << "  note ons       " << s.noteOnCount << " (last velocity " << s.lastVelocity << ")\n"
          << "  sender poll    <= " << MidiOutputSender::senderPollIntervalMs << " ms added\n"
-         << "  dropped        " << (int) midiSender.getDroppedMessageCount() << "\n";
+         << "  dropped        " << (int) midiSender.getDroppedMessageCount() << "\n"
+         << "Song guidance\n"
+         << "  palette        " << (s.sampleRateHz <= 0.0 ? juce::String ("not applied yet (no audio device running)")
+                                       : s.paletteSize > 0 ? juce::String (s.paletteSize) + " notes in use"
+                                                           : juce::String ("none (Free mode)")) << "\n"
+         << "  early frames   " << s.paletteRelievedFrames << " (decided sooner thanks to the palette)\n"
+         << "  delayed notes  " << s.paletteDelayed << " (off-palette, needed extra confirmation)\n";
 
     diagnostics.setText (text, juce::dontSendNotification);
 }
@@ -286,6 +434,25 @@ void MainComponent::resized()
     transposeRow.removeFromLeft (120);
     transposeLabel.setBounds (transposeRow.removeFromLeft (140));
     transposeSlider.setBounds (transposeRow.removeFromLeft (380));
+    area.removeFromTop (8);
+    area.removeFromTop (8);
+    auto songRow = area.removeFromTop (28);
+    songLabel.setBounds (songRow.removeFromLeft (60));
+    previousSongButton.setBounds (songRow.removeFromLeft (28));
+    songRow.removeFromLeft (4);
+    songBox.setBounds (songRow.removeFromLeft (300));
+    songRow.removeFromLeft (4);
+    nextSongButton.setBounds (songRow.removeFromLeft (28));
+    songRow.removeFromLeft (8);
+    addSongsButton.setBounds (songRow.removeFromLeft (110));
+    songRow.removeFromLeft (4);
+    removeSongButton.setBounds (songRow.removeFromLeft (80));
+    area.removeFromTop (4);
+    auto trackRow = area.removeFromTop (28);
+    trackLabel.setBounds (trackRow.removeFromLeft (92));
+    trackBox.setBounds (trackRow.removeFromLeft (300));
+    area.removeFromTop (2);
+    paletteLabel.setBounds (area.removeFromTop (24));
     area.removeFromTop (8);
     midiStatus.setBounds (area.removeFromTop (24));
 

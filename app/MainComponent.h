@@ -2,13 +2,14 @@
 
 #include "AudioEngine.h"
 #include "MidiOutputSender.h"
+#include "SongLibrary.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
-// Main window: audio input selection, MIDI output settings (enable, channel, gate), virtual MIDI
-// port status, a test-note button for verifying the MainStage route, and live pitch / note /
-// timing diagnostics.
+// Main window: audio input selection, MIDI output settings (enable, channel, gate, transpose), the
+// song list for the optional song palette (Free mode by default), virtual MIDI port status, a
+// test-note button for verifying the MainStage route, and live pitch / note / timing diagnostics.
 class MainComponent final : public juce::Component, private juce::Timer
 {
 public:
@@ -35,6 +36,18 @@ private:
     void inputChannelChosen();
     void midiSettingsChanged();
 
+    // Song palette (message thread). Item ids in songBox: freeModeId, then songIdOffset + index.
+    static constexpr int freeModeId = 1, songIdOffset = 2;
+    void refreshSongControls();
+    void songChosen();
+    void trackChosen();
+    void applySongPalette();
+    void addSongs();
+    void removeSelectedSong();
+    void stepSong (int delta);
+    void saveSongState();
+    int selectedSongIndex() const { return songBox.getSelectedId() - songIdOffset; } // -1 = Free mode
+
     juce::PropertiesFile& settings;
     juce::AudioDeviceManager deviceManager;
     MidiOutputSender midiSender;
@@ -54,6 +67,16 @@ private:
     juce::Label transposeLabel { {}, "Transpose:" };
     juce::Slider transposeSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight };
     int currentMidiChannel = defaultMidiChannel;
+    SongLibrary songs;
+    juce::Label songLabel { {}, "Song:" };
+    juce::ComboBox songBox;
+    juce::TextButton previousSongButton { "<" }, nextSongButton { ">" };
+    juce::TextButton addSongsButton { "Add songs..." }, removeSongButton { "Remove" };
+    juce::Label trackLabel { {}, "Bass track:" };
+    juce::ComboBox trackBox;
+    juce::Label paletteLabel;
+    std::unique_ptr<juce::FileChooser> songChooser;
+
     juce::TextButton testNoteButton { "Test note (MIDI 48)" };
     juce::TextButton resetStatsButton { "Reset timing stats" };
     bool testNoteSounding = false;

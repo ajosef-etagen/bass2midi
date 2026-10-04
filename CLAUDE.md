@@ -19,9 +19,10 @@ V1 is delivered as a **standalone macOS app** that opens the audio interface its
 | Path | Contents | Depends on |
 | --- | --- | --- |
 | `dsp/` | Real-time DSP core (`bass2midi_dsp`): framing, FFT, pitch estimators, later onset/validation/state machine | C++20 only, no JUCE |
-| `app/` | Standalone JUCE app: audio device, virtual MIDI port, sender thread, diagnostics UI | JUCE 8, `dsp/` |
+| `song/` | Guitar Pro song files (.gp, .gp5) → tracks, notes, song palette (non-real-time) | `dsp/`, zlib |
+| `app/` | Standalone JUCE app: audio device, virtual MIDI port, sender thread, song list, diagnostics UI | JUCE 8, `dsp/`, `song/` |
 | `eval/` | Offline evaluation: synthetic corpus, reference setups, `bass2midi_baseline` tool | `dsp/` |
-| `tests/` | doctest unit tests (`bass2midi_tests`) | `dsp/`, `eval/` |
+| `tests/` | doctest unit tests (`bass2midi_tests`), generated song fixtures in `tests/data/` | `dsp/`, `eval/`, `song/` |
 | `docs/` | Design notes and versioned evaluation results | - |
 
 Build and test (DSP/tests need no JUCE; add `-DBASS2MIDI_BUILD_APP=OFF` to skip the app):
@@ -31,6 +32,7 @@ cmake -S . -B build -G Ninja -DBASS2MIDI_BUILD_APP=OFF
 cmake --build build
 ctest --test-dir build --output-on-failure
 ./build/bass2midi_baseline --out docs/baseline/<name>   # full corpus, ~90 s; --quick for a subset
+./build/bass2midi_baseline --palette --out docs/baseline/<name>   # Free vs. song-palette study
 ```
 
 ## Scope

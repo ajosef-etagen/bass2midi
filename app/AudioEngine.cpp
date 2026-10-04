@@ -14,6 +14,34 @@ void AudioEngine::setMidiSettings (bool enabled, int midiChannel, double gateOpe
     settingsVersion.fetch_add (1);
 }
 
+void AudioEngine::setPalette (const bass2midi::NotePalette& palette) noexcept
+{
+    // Single writer (message thread): odd sequence while the words change.
+    paletteSequence.fetch_add (1);
+    pendingPaletteLow.store (palette.bits[0]);
+    pendingPaletteHigh.store (palette.bits[1]);
+    paletteSequence.fetch_add (1);
+}
+
+void AudioEngine::applyPendingPalette() noexcept
+{
+    const auto before = paletteSequence.load();
+    if ((before == appliedPaletteSequence && ! forcePaletteApply) || (before & 1u) != 0)
+        return; // unchanged, or a write is in progress: try again next block
+
+    bass2midi::NotePalette palette;
+    palette.bits[0] = pendingPaletteLow.load();
+    palette.bits[1] = pendingPaletteHigh.load();
+    if (paletteSequence.load() != before)
+        return; // torn read
+
+    appliedPaletteSequence = before;
+    forcePaletteApply = false;
+    tracker.setPalette (palette);
+    noteMachine.setPalette (palette);
+    paletteSize.store (palette.size(), std::memory_order_relaxed);
+}
+
 void AudioEngine::audioDeviceAboutToStart (juce::AudioIODevice* device)
 {
     // Called before callbacks start (not concurrently with them), so allocation is allowed here.
@@ -21,6 +49,7 @@ void AudioEngine::audioDeviceAboutToStart (juce::AudioIODevice* device)
     const auto hop = juce::jmax (1, (int) std::lround (rate * analysisHopSeconds));
 
     analysisReady = tracker.prepare (rate, {}) && framer.prepare (tracker.getFrameSamples(), hop);
+    forcePaletteApply = true; // the tracker was re-prepared: hand it the current palette again
     const int frameSamples = tracker.getFrameSamples();
 
     // Frame timing of the state machine follows the analysis framing at this sample rate.
@@ -85,6 +114,7 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
             juce::FloatVectorOperations::clear (outputChannelData[ch], numSamples);
 
     applyPendingSettings();
+    applyPendingPalette();
 
     const int channel = juce::jmin (requestedChannel.load (std::memory_order_relaxed), numInputChannels - 1);
     const float* input = channel >= 0 ? inputChannelData[channel] : nullptr;
@@ -126,6 +156,8 @@ void AudioEngine::handleFrame (const float* window) noexcept
     lastValid.store (candidate.valid, std::memory_order_relaxed);
     lastFrequencyHz.store (candidate.frequencyHz, std::memory_order_relaxed);
     lastClarity.store (candidate.clarity, std::memory_order_relaxed);
+    if (estimate.paletteRelieved)
+        paletteRelievedFrames.fetch_add (1, std::memory_order_relaxed);
     lastRmsLinear.store (candidate.windowRmsLinear, std::memory_order_relaxed);
 
     if (! outputEnabled)
@@ -158,6 +190,7 @@ void AudioEngine::sendEvents (const bass2midi::NoteStateMachine::Output& output)
     }
 
     soundingNote.store (noteMachine.getSoundingOutputNote(), std::memory_order_relaxed);
+    paletteDelayed.store (noteMachine.getPaletteDelayedDecisions(), std::memory_order_relaxed);
     playedNote.store (noteMachine.getSoundingNote(), std::memory_order_relaxed);
 }
 
@@ -178,6 +211,9 @@ AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
     s.playedNote = playedNote.load();
     s.lastVelocity = lastVelocity.load();
     s.noteOnCount = noteOnCount.load();
+    s.paletteSize = paletteSize.load();
+    s.paletteDelayed = paletteDelayed.load();
+    s.paletteRelievedFrames = paletteRelievedFrames.load();
 
     const auto ticksPerMs = (double) juce::Time::getHighResolutionTicksPerSecond() / 1000.0;
     const auto count = callbackCount.load();
