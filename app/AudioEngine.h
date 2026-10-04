@@ -10,7 +10,7 @@
 
 class MidiOutputSender;
 
-// Audio-device callback: conditions the first active input channel and runs pitch analysis.
+// Audio-device callback: runs pitch analysis on one selected active input channel.
 //
 // Phase 0 state: analysis is for monitoring only (reference YIN over the full V1 range). No MIDI
 // is generated from audio yet - that waits for the authoritative note state machine (Phase 1).
@@ -45,6 +45,13 @@ public:
 
     // Message thread.
     Snapshot getSnapshot() const noexcept;
+
+    // Message thread. Index among the device's *active* input channels (0 = first enabled
+    // channel); clamped to the channels actually delivered by the device.
+    void setAnalysedChannel (int activeChannelIndex) noexcept { requestedChannel.store (juce::jmax (0, activeChannelIndex)); }
+
+    // Message thread. Highest absolute sample value of the analysed channel since the last call.
+    float takeInputPeakLinear() noexcept { return inputPeakLinear.exchange (0.0f); }
     void resetCallbackStats() noexcept { resetStatsRequested.store (true); }
 
     void audioDeviceAboutToStart (juce::AudioIODevice* device) override;
@@ -61,6 +68,9 @@ private:
     bass2midi::AnalysisFramer framer;
     bass2midi::YinPitchEstimator estimator;
     bool analysisReady = false;
+
+    std::atomic<int> requestedChannel { 0 };
+    std::atomic<float> inputPeakLinear { 0.0f };
 
     std::atomic<bool> lastValid { false };
     std::atomic<double> lastFrequencyHz { 0.0 }, lastClarity { 0.0 }, lastRmsLinear { 0.0 };

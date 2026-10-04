@@ -40,11 +40,22 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
         if (outputChannelData[ch] != nullptr)
             juce::FloatVectorOperations::clear (outputChannelData[ch], numSamples);
 
-    if (analysisReady && numInputChannels > 0 && inputChannelData[0] != nullptr)
-        framer.push (inputChannelData[0], numSamples, [this] (const float* window, std::int64_t, int)
-        {
-            handleFrame (window);
-        });
+    const int channel = juce::jmin (requestedChannel.load (std::memory_order_relaxed), numInputChannels - 1);
+    const float* input = channel >= 0 ? inputChannelData[channel] : nullptr;
+
+    if (input != nullptr)
+    {
+        const auto range = juce::FloatVectorOperations::findMinAndMax (input, numSamples);
+        const auto blockPeak = juce::jmax (-range.getStart(), range.getEnd());
+        if (blockPeak > inputPeakLinear.load (std::memory_order_relaxed))
+            inputPeakLinear.store (blockPeak, std::memory_order_relaxed);
+
+        if (analysisReady)
+            framer.push (input, numSamples, [this] (const float* window, std::int64_t, int)
+            {
+                handleFrame (window);
+            });
+    }
 
     const auto elapsed = juce::Time::getHighResolutionTicks() - startTicks;
 

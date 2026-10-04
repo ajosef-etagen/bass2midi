@@ -27,6 +27,8 @@ private:
     void timerCallback() override;
     void sendTestNote();
     void saveDeviceState();
+    void refreshInputChannelChoices();
+    void inputChannelChosen();
 
     juce::PropertiesFile& settings;
     juce::AudioDeviceManager deviceManager;
@@ -35,6 +37,10 @@ private:
 
     std::unique_ptr<juce::AudioDeviceSelectorComponent> deviceSelector;
     juce::Label midiStatus, pitchReadout, diagnostics;
+    juce::Label inputChannelLabel { {}, "Analysed input:" };
+    juce::ComboBox inputChannelBox;
+    juce::StringArray activeInputNames;   // active input channels, in the order the device delivers them
+    float displayedPeakLinear = 0.0f;     // decaying peak hold for the readout
     juce::TextButton testNoteButton { "Send test note (C3)" };
     juce::TextButton resetStatsButton { "Reset timing stats" };
     bool testNoteSounding = false;

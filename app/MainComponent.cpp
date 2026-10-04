@@ -7,11 +7,13 @@
 namespace
 {
     constexpr const char* deviceStateKey = "audioDeviceState";
+    constexpr const char* analysedInputKey = "analysedInputChannel";
 }
 
 MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (settingsToUse)
 {
-    // Mono bass input: one or two input channels may be enabled, only the first is analysed.
+    // Mono bass input: one or two input channels may be enabled; "Analysed input" picks the one
+    // that is analysed (the device selector's level meter shows all enabled channels together).
     // No outputs: Bass2MIDI never plays audio, the interface stays free for MainStage.
     const auto savedState = settings.getXmlValue (deviceStateKey);
     const auto error = deviceManager.initialise (1, 0, savedState.get(), true);
@@ -39,13 +41,19 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     diagnostics.setFont (juce::FontOptions (juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain));
     diagnostics.setJustificationType (juce::Justification::topLeft);
 
+    inputChannelLabel.setJustificationType (juce::Justification::centredRight);
+    addAndMakeVisible (inputChannelLabel);
+    inputChannelBox.onChange = [this] { inputChannelChosen(); };
+    addAndMakeVisible (inputChannelBox);
+    refreshInputChannelChoices();
+
     testNoteButton.onClick = [this] { sendTestNote(); };
     testNoteButton.setEnabled (midiSender.isOpen());
     resetStatsButton.onClick = [this] { engine.resetCallbackStats(); };
     addAndMakeVisible (testNoteButton);
     addAndMakeVisible (resetStatsButton);
 
-    setSize (640, 680);
+    setSize (640, 760);
     startTimerHz (20);
 }
 
@@ -67,6 +75,42 @@ void MainComponent::saveDeviceState()
     if (const auto state = deviceManager.createStateXml())
         settings.setValue (deviceStateKey, state.get());
     settings.saveIfNeeded();
+}
+
+void MainComponent::refreshInputChannelChoices()
+{
+    juce::StringArray names;
+    if (auto* device = deviceManager.getCurrentAudioDevice())
+    {
+        const auto allNames = device->getInputChannelNames();
+        const auto active = device->getActiveInputChannels();
+        for (int i = 0; i < allNames.size(); ++i)
+            if (active[i])
+                names.add (allNames[i]);
+    }
+
+    if (names == activeInputNames)
+        return;
+
+    activeInputNames = names;
+    inputChannelBox.clear (juce::dontSendNotification);
+    for (int i = 0; i < names.size(); ++i)
+        inputChannelBox.addItem (names[i], i + 1);
+
+    const auto saved = settings.getValue (analysedInputKey);
+    const auto savedIndex = names.indexOf (saved);
+    inputChannelBox.setSelectedId (savedIndex >= 0 ? savedIndex + 1 : 1, juce::dontSendNotification);
+    engine.setAnalysedChannel (juce::jmax (0, inputChannelBox.getSelectedId() - 1));
+}
+
+void MainComponent::inputChannelChosen()
+{
+    const auto index = inputChannelBox.getSelectedId() - 1;
+    if (index < 0)
+        return;
+
+    engine.setAnalysedChannel (index);
+    settings.setValue (analysedInputKey, activeInputNames[index]);
 }
 
 void MainComponent::sendTestNote()
@@ -97,7 +141,13 @@ void MainComponent::sendTestNote()
 
 void MainComponent::timerCallback()
 {
+    refreshInputChannelChoices();
+
     const auto s = engine.getSnapshot();
+
+    // Peak hold with ~1.5 s decay at 20 Hz refresh.
+    displayedPeakLinear = juce::jmax (engine.takeInputPeakLinear(), displayedPeakLinear * 0.85f);
+    const auto peakDbfs = displayedPeakLinear > 1.0e-6f ? 20.0 * std::log10 ((double) displayedPeakLinear) : -120.0;
 
     if (s.valid && s.frequencyHz > 0.0)
     {
@@ -114,7 +164,10 @@ void MainComponent::timerCallback()
     }
 
     juce::String text;
-    text << "Reference analysis (plain YIN, no note decisions yet)\n"
+    text << "Analysed input\n"
+         << "  channel        " << (activeInputNames.isEmpty() ? juce::String ("none enabled") : inputChannelBox.getText()) << "\n"
+         << "  peak           " << juce::String (peakDbfs, 1) << " dBFS" << (displayedPeakLinear >= 0.99f ? "  CLIPPING" : "") << "\n"
+         << "Reference analysis (plain YIN, no note decisions yet)\n"
          << "  clarity        " << juce::String (s.clarity, 3) << "\n"
          << "  window level   " << juce::String (s.windowRmsDbfs, 1) << " dBFS RMS\n";
 
@@ -152,7 +205,11 @@ void MainComponent::paint (juce::Graphics& g)
 void MainComponent::resized()
 {
     auto area = getLocalBounds().reduced (12);
-    deviceSelector->setBounds (area.removeFromTop (180));
+    deviceSelector->setBounds (area.removeFromTop (200));
+    area.removeFromTop (8);
+    auto channelRow = area.removeFromTop (28);
+    inputChannelLabel.setBounds (channelRow.removeFromLeft (140));
+    inputChannelBox.setBounds (channelRow.removeFromLeft (260));
     area.removeFromTop (8);
     midiStatus.setBounds (area.removeFromTop (24));
 
