@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bass2midi/NotePalette.h"
 #include "bass2midi/PitchCandidate.h"
 #include "bass2midi/YinPitchEstimator.h"
 
@@ -29,6 +30,14 @@ namespace bass2midi
     // about 1.5 x the rung's longest period, i.e. ~3 periods for notes whose sub-octave is in range
     // (>= ~76 Hz) and ~1.5 periods of the next longer rung below that.
     //
+    // Song palette (optional, see setPalette): a shorter rung's candidate that is NOT octave-safe may
+    // still be used when the palette contains its note but neither of the two lower octaves. It only
+    // fills frames the free tracker would leave without a valid result (typically the first frames
+    // after an attack, while the longer windows still straddle the onset): as soon as the rung that
+    // is octave-safe for it yields a valid result, that result wins, exactly as without a palette. A
+    // wrong early guess (an off-palette note played below a palette note) is therefore corrected
+    // rather than locked in.
+    //
     // Real-time: prepare() allocates; estimate() is allocation-free. Cost: up to rungCount YIN runs per
     // frame (stops at the first accepted rung).
     class MultiResolutionPitchTracker
@@ -51,6 +60,7 @@ namespace bass2midi
             double subOctaveFloor = 0.02;
             double silenceDropDb = 20.0;          // see YinPitchEstimator::Config (all rungs)
             double levelChangeDb = 12.0;          // see YinPitchEstimator::Config (all rungs)
+            bool paletteOctaveRelief = true;      // use the song palette as described above (no effect when empty)
 
             bool isValid() const noexcept;
         };
@@ -60,6 +70,7 @@ namespace bass2midi
             PitchCandidate pitch;
             int rung = -1;          // index of the winning rung (0 = shortest), -1 if none valid
             int windowSamples = 0;  // window of the winning rung (or the longest rung if none)
+            bool paletteRelieved = false; // the result exists only because of the song palette
         };
 
         // Non-real-time. Returns false for invalid settings or sample rate.
@@ -70,6 +81,10 @@ namespace bass2midi
         int getRungCount() const noexcept { return rungCount; }
         int getRungWindowSamples (int rung) const noexcept { return estimators[static_cast<size_t> (rung)].getConfig().windowSamples; }
 
+        // Real-time safe. Notes in played-note space (before any MIDI transposition); empty = Free mode.
+        void setPalette (const NotePalette& newPalette) noexcept { palette = newPalette; }
+        const NotePalette& getPalette() const noexcept { return palette; }
+
         // Real-time safe. `frame` holds getFrameSamples() samples, oldest first.
         Result estimate (const float* frame) noexcept;
 
@@ -79,6 +94,9 @@ namespace bass2midi
         int rungCount = 0;
         int frameSamples = 0;
         int rangeMaxLagSamples = 0;
+        NotePalette palette;
+
+        bool paletteRelieves (const PitchCandidate& candidate) const noexcept;
         std::array<YinPitchEstimator, maxRungs> estimators;
     };
 }

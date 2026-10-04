@@ -38,7 +38,9 @@ namespace bass2midi
             && nonNegative (onsetValidMs)
             && std::isfinite (velocityFloorDbfs) && std::isfinite (velocityCeilDbfs)
             && velocityCeilDbfs > velocityFloorDbfs
-            && minVelocity >= 1 && minVelocity <= 127;
+            && minVelocity >= 1 && minVelocity <= 127
+            && nonNegative (offPaletteConfirmMs) && offPaletteConfirmMs <= 200.0
+            && nonNegative (offPaletteOctaveConfirmMs) && offPaletteOctaveConfirmMs <= 200.0;
     }
 
     int NoteStateMachine::framesFor (double ms) const noexcept
@@ -60,6 +62,8 @@ namespace bass2midi
         holdFrames = std::min (maxLookbackFrames, framesFor (settings.envelopeHoldMs));
         onsetValidFrames = framesFor (settings.onsetValidMs);
         settleFrames = framesFor (settings.onsetSettleMs);
+        offPaletteFrames = settings.offPaletteConfirmMs > 0.0 ? framesFor (settings.offPaletteConfirmMs) : 0;
+        offPaletteOctaveFrames = settings.offPaletteOctaveConfirmMs > 0.0 ? framesFor (settings.offPaletteOctaveConfirmMs) : 0;
         return true;
     }
 
@@ -90,6 +94,25 @@ namespace bass2midi
         const double position = (toDbfs (peakLinear) - s.velocityFloorDbfs) / (s.velocityCeilDbfs - s.velocityFloorDbfs);
         const double clamped = std::clamp (position, 0.0, 1.0);
         return s.minVelocity + static_cast<int> (std::lround (clamped * (127 - s.minVelocity)));
+    }
+
+    int NoteStateMachine::palettePenaltyFrames (int note) const noexcept
+    {
+        if (palette.empty() || palette.contains (note))
+            return 0;
+        const bool octaveOfPaletteNote = palette.contains (note - 12) || palette.contains (note + 12)
+                                      || palette.contains (note - 24) || palette.contains (note + 24);
+        return offPaletteFrames + (octaveOfPaletteNote ? offPaletteOctaveFrames : 0);
+    }
+
+    bool NoteStateMachine::decide (int candidateCount, int freeRequired, int note) noexcept
+    {
+        if (candidateCount < freeRequired)
+            return false;
+        const int penalty = palettePenaltyFrames (note);
+        if (penalty > 0 && candidateCount == freeRequired)
+            ++paletteDelayedDecisions;
+        return candidateCount >= freeRequired + penalty;
     }
 
     void NoteStateMachine::addNoteOff (Output& out) noexcept
@@ -223,7 +246,7 @@ namespace bass2midi
         // 4. Decisions.
         if (soundingNote < 0)
         {
-            if (candidateFrames >= settings.attackFrames)
+            if (decide (candidateFrames, settings.attackFrames, note))
             {
                 addNoteOn (out, note);
                 noteRmsPeakLinear = frame.pitch.windowRmsLinear;
@@ -256,7 +279,7 @@ namespace bass2midi
         const int required = onsetFramesLeft > 0 ? settings.attackFrames
                            : isOctaveJump (soundingNote, note) ? octaveFrames
                                                                : changeFrames;
-        if (candidateFrames >= required)
+        if (decide (candidateFrames, required, note))
         {
             addNoteOff (out);
             addNoteOn (out, note);

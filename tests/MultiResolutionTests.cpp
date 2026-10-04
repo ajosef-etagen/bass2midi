@@ -21,12 +21,15 @@ namespace
     {
         std::map<int, int> notes;     // detected note -> frame count
         double firstCorrectMs = -1.0; // first frame reporting the expected note, relative to onset
+        int lastNote = -1;            // note of the last voiced frame
     };
 
-    Trace trace (int note, double fundamentalGainDb, double sampleRateHz, double noiseFloorDbfs = -90.0)
+    Trace trace (int note, double fundamentalGainDb, double sampleRateHz, double noiseFloorDbfs = -90.0,
+                 const NotePalette& palette = {})
     {
         MultiResolutionPitchTracker tracker;
         REQUIRE (tracker.prepare (sampleRateHz, {}));
+        tracker.setPalette (palette);
         AnalysisFramer framer;
         REQUIRE (framer.prepare (tracker.getFrameSamples(), static_cast<int> (std::lround (sampleRateHz * 0.0025))));
 
@@ -41,6 +44,7 @@ namespace
         const auto onset = eval::onsetSample (spec);
 
         Trace t;
+        int lastDetected = -1;
         framer.push (signal.data(), static_cast<int> (signal.size()), [&] (const float* frame, std::int64_t end, int)
         {
             const auto r = tracker.estimate (frame);
@@ -48,10 +52,20 @@ namespace
                 return;
             const int detected = static_cast<int> (std::lround (midi::noteFromFrequencyHz (r.pitch.frequencyHz)));
             ++t.notes[detected];
+            lastDetected = detected;
             if (detected == note && t.firstCorrectMs < 0.0)
                 t.firstCorrectMs = 1000.0 * static_cast<double> (end - onset) / sampleRateHz;
         });
+        t.lastNote = lastDetected;
         return t;
+    }
+
+    NotePalette paletteOf (std::initializer_list<int> notes)
+    {
+        NotePalette p;
+        for (const int n : notes)
+            p.add (n);
+        return p;
     }
 }
 
@@ -164,4 +178,57 @@ TEST_CASE ("Multi-resolution tracker: no phantom notes when the window straddles
                         wrong += frames;
                 CHECK (wrong <= 1);
             }
+}
+
+TEST_CASE ("Multi-resolution tracker: a song palette lets mid-range notes be found earlier, never wrongly")
+{
+    // E2..G2 need the full-range window without a palette (their sub-octave lies inside the range).
+    for (const double rate : { 44100.0, 48000.0 })
+        for (const int note : { 40, 41, 43, 45 })
+            for (const double gainDb : { 0.0, -18.0 })
+            {
+                CAPTURE (rate);
+                CAPTURE (note);
+                CAPTURE (gainDb);
+                const auto free = trace (note, gainDb, rate);
+                const auto guided = trace (note, gainDb, rate, -90.0, paletteOf ({ note, note + 3, note + 5, note + 7, note + 10 }));
+                REQUIRE (free.firstCorrectMs > 0.0);
+                REQUIRE (guided.firstCorrectMs > 0.0);
+                CHECK (guided.firstCorrectMs <= free.firstCorrectMs);
+                if (gainDb == 0.0)
+                    CHECK (guided.firstCorrectMs < free.firstCorrectMs - 5.0);
+                const auto wrongFrames = [note] (const Trace& t)
+                {
+                    int wrong = 0;
+                    for (const auto& [n, frames] : t.notes)
+                        wrong += n == note ? 0 : frames;
+                    return wrong;
+                };
+                CHECK (wrongFrames (guided) <= wrongFrames (free)); // the palette adds no wrong-note frame
+            }
+}
+
+TEST_CASE ("Multi-resolution tracker: the palette does not apply when a lower octave is in it")
+{
+    const auto free = trace (40, 0.0, 48000.0);
+    const auto guided = trace (40, 0.0, 48000.0, -90.0, paletteOf ({ 28, 40 }));
+    CHECK (guided.firstCorrectMs == doctest::Approx (free.firstCorrectMs));
+    CHECK (guided.notes == free.notes);
+}
+
+TEST_CASE ("Multi-resolution tracker: an off-palette note below a palette note is corrected, not locked in")
+{
+    // Worst case for the palette: E1 played, only E2 expected. Early frames may read E2; the
+    // octave-safe window must take over and the sustained result must be E1.
+    for (const double gainDb : { 0.0, -18.0 })
+    {
+        CAPTURE (gainDb);
+        const auto t = trace (28, gainDb, 48000.0, -90.0, paletteOf ({ 40 }));
+        CHECK (t.lastNote == 28);
+        REQUIRE (t.notes.count (28) == 1);
+        int other = 0;
+        for (const auto& [n, frames] : t.notes)
+            other += n == 28 ? 0 : frames;
+        CHECK (other < t.notes.at (28) / 10);
+    }
 }

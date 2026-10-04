@@ -373,3 +373,87 @@ TEST_CASE ("Note state machine: release glides and murky frames do not move a no
     CHECK (h.feed (frame (30.0, -37.0, 0.97), 60) == 0);
     CHECK (h.machine.getSoundingNote() == 32);
 }
+
+TEST_CASE ("Note state machine: song palette delays off-palette notes, never suppresses them")
+{
+    const auto framesToNoteOn = [] (const NotePalette& palette, int note)
+    {
+        Harness h;
+        h.machine.setPalette (palette);
+        h.feed (silence(), 20);
+        for (int i = 1; i <= 200; ++i)
+            if (h.feed (frame (note, -12.0)) > 0)
+            {
+                CHECK (h.events.back().note == note);
+                return i;
+            }
+        return -1;
+    };
+
+    NotePalette palette;
+    for (const int n : { 33, 36, 38, 40, 43 }) // A1 C2 D2 E2 G2
+        palette.add (n);
+
+    const NoteStateMachine::Settings s;
+    const int free = framesToNoteOn ({}, 37);
+    CHECK (free == s.attackFrames);
+    CHECK (framesToNoteOn (palette, 38) == free);                    // palette note: as in Free mode
+    CHECK (framesToNoteOn (palette, 37) == free + 4);                // off-palette: + offPaletteConfirmMs (10 ms)
+    CHECK (framesToNoteOn (palette, 45) == free + 4 + 8);            // A2, octave of A1: + 20 ms more
+    CHECK (framesToNoteOn (palette, 55) == free + 4 + 8);            // G3, two octaves above G2
+
+    Harness h;
+    h.machine.setPalette (palette);
+    h.feed (silence(), 20);
+    h.feed (frame (37, -12.0), 6);
+    CHECK (h.machine.getPaletteDelayedDecisions() == 1);
+    CHECK (h.count (Type::noteOn) == 1);
+}
+
+TEST_CASE ("Note state machine: palette weighting applies to note changes; frames between still reset")
+{
+    NotePalette palette;
+    for (const int n : { 33, 38, 40 })
+        palette.add (n);
+
+    Harness h;
+    h.machine.setPalette (palette);
+    h.feed (silence(), 20);
+    h.feed (frame (38, -12.0), 4);
+    REQUIRE (h.count (Type::noteOn) == 1);
+
+    // Off-palette semitone change without onset: noteChangeConfirmMs (4 frames) + 4 frames.
+    CHECK (h.feed (frame (39, -12.0, 0.96), 7) == 0);
+    CHECK (h.feed (frame (39, -12.0, 0.96)) == 2);
+    CHECK (h.events.back().note == 39);
+
+    // A sounding note is never ended by changing the palette; Free mode restores normal timing.
+    h.machine.setPalette ({});
+    CHECK (h.feed (frame (39, -12.0), 50) == 0);
+    CHECK (h.feed (frame (41, -12.0, 0.96), 3) == 0);
+    CHECK (h.feed (frame (41, -12.0, 0.96)) == 2);
+}
+
+TEST_CASE ("Note state machine: palette settings validation")
+{
+    NoteStateMachine::Settings s;
+    s.offPaletteConfirmMs = -1.0;
+    CHECK_FALSE (s.isValid());
+    s.offPaletteConfirmMs = 0.0;
+    s.offPaletteOctaveConfirmMs = 0.0;
+    CHECK (s.isValid());
+    s.offPaletteOctaveConfirmMs = 500.0;
+    CHECK_FALSE (s.isValid());
+
+    // Zero penalties: off-palette notes behave exactly as in Free mode.
+    NoteStateMachine m;
+    s.offPaletteOctaveConfirmMs = 0.0;
+    REQUIRE (m.setSettings (s));
+    NotePalette palette;
+    palette.add (40);
+    m.setPalette (palette);
+    for (int i = 0; i < 20; ++i)
+        m.processFrame (silence());
+    m.processFrame (frame (52, -12.0));
+    CHECK (m.processFrame (frame (52, -12.0)).count == 1);
+}

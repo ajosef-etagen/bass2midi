@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bass2midi/NotePalette.h"
 #include "bass2midi/PitchCandidate.h"
 
 #include <array>
@@ -48,6 +49,12 @@ namespace bass2midi
     //     or only attackFrames when an onset is pending. The same note is re-attacked when an onset
     //     is pending and the analysis window has settled on the new attack (onsetSettleMs).
     //
+    //  5. Song palette (optional, setPalette): a note outside a non-empty palette needs
+    //     offPaletteConfirmMs more consistent frames for any Note On or change, plus
+    //     offPaletteOctaveConfirmMs when it lies 12/24 semitones from a palette note (the typical
+    //     octave error). This is a bounded delay, never a rejection: consistent acoustic evidence for
+    //     that long always overrides the palette. Palette notes are decided exactly as in Free mode.
+    //
     // Real-time: no allocation, no locks; processFrame is O(onset lookback) per frame.
     class NoteStateMachine
     {
@@ -83,6 +90,8 @@ namespace bass2midi
             double velocityFloorDbfs = -40.0;     // attack peak mapped to minVelocity
             double velocityCeilDbfs = -6.0;       // attack peak mapped to 127
             int minVelocity = 20;                 // 1..127
+            double offPaletteConfirmMs = 10.0;    // extra confirmation for a note outside a non-empty song palette
+            double offPaletteOctaveConfirmMs = 20.0; // further extra when it is an octave from a palette note
 
             bool isValid() const noexcept;
         };
@@ -101,6 +110,11 @@ namespace bass2midi
         bool setSettings (const Settings& newSettings) noexcept;
         const Settings& getSettings() const noexcept { return settings; }
 
+        // Real-time safe. Played-note space (before transposition); an empty palette is Free mode.
+        // Takes effect for the next decision; a sounding note is never ended by a palette change.
+        void setPalette (const NotePalette& newPalette) noexcept { palette = newPalette; }
+        const NotePalette& getPalette() const noexcept { return palette; }
+
         // Real-time safe. Clears all state WITHOUT emitting events; use allNotesOff to end a note.
         void reset() noexcept;
 
@@ -115,6 +129,9 @@ namespace bass2midi
         int getSoundingOutputNote() const noexcept { return soundingOutputNote; } // note sent as MIDI
         int getLastVelocity() const noexcept { return lastVelocity; }
         bool isOnsetPending() const noexcept { return onsetFramesLeft > 0; }
+        // Decisions the palette postponed: a candidate reached the Free-mode frame count but was off-palette.
+        // Counts since construction (not cleared by reset).
+        int getPaletteDelayedDecisions() const noexcept { return paletteDelayedDecisions; }
 
         // Pure helpers, exposed for tests.
         static int velocityFromPeak (double peakLinear, const Settings& s) noexcept;
@@ -126,12 +143,17 @@ namespace bass2midi
         int framesFor (double ms) const noexcept;
         void addNoteOff (Output& out) noexcept;
         void addNoteOn (Output& out, int note) noexcept;
+        int palettePenaltyFrames (int note) const noexcept;
+        bool decide (int candidateCount, int freeRequired, int note) noexcept;
 
         Settings settings;
 
         // Derived frame counts (from settings.frameIntervalSeconds).
         int releaseHoldFrames = 12, unvoicedReleaseFrames = 80, changeFrames = 4, octaveFrames = 16;
         int lookbackFrames = 8, holdFrames = 10, onsetValidFrames = 48, settleFrames = 16;
+        int offPaletteFrames = 4, offPaletteOctaveFrames = 12;
+        NotePalette palette;
+        int paletteDelayedDecisions = 0;
 
         int soundingNote = -1, soundingOutputNote = -1, soundingChannel = 1, lastVelocity = 0;
         int candidateNote = -1, candidateFrames = 0;

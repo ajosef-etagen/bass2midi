@@ -1,4 +1,5 @@
 #include "bass2midi/MultiResolutionPitchTracker.h"
+#include "bass2midi/MidiNoteUtils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -76,11 +77,21 @@ namespace bass2midi
         return true;
     }
 
+    bool MultiResolutionPitchTracker::paletteRelieves (const PitchCandidate& candidate) const noexcept
+    {
+        if (! settings.paletteOctaveRelief || palette.empty() || ! (candidate.frequencyHz > 0.0))
+            return false;
+        const int note = static_cast<int> (std::lround (midi::noteFromFrequencyHz (candidate.frequencyHz)));
+        return palette.contains (note) && ! palette.contains (note - 12) && ! palette.contains (note - 24);
+    }
+
     MultiResolutionPitchTracker::Result MultiResolutionPitchTracker::estimate (const float* frame) noexcept
     {
         Result result;
         if (rungCount == 0)
             return result;
+
+        Result relieved; // first palette-relieved candidate, used only if nothing octave-safe is valid
 
         for (int i = 0; i < rungCount; ++i)
         {
@@ -91,6 +102,8 @@ namespace bass2midi
 
             if (longest)
             {
+                if (! candidate.valid && relieved.rung >= 0)
+                    return relieved;
                 result.pitch = candidate;
                 result.rung = candidate.valid ? i : -1;
                 result.windowSamples = window;
@@ -110,6 +123,14 @@ namespace bass2midi
                 result.rung = i;
                 result.windowSamples = window;
                 return result;
+            }
+
+            if (relieved.rung < 0 && paletteRelieves (candidate))
+            {
+                relieved.pitch = candidate;
+                relieved.rung = i;
+                relieved.windowSamples = window;
+                relieved.paletteRelieved = true;
             }
         }
 

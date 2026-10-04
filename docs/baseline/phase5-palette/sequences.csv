@@ -1,0 +1,721 @@
+setup,scenario,sample_rate_hz,variant,first_note,second_note,emitted_note_ons,note_ons,note_offs,pass,second_latency_ms
+free,repeat-ringing,44100,full-fundamental,E1,E1,E1,1,1,0,-
+free,repeat-ringing,44100,weak-fundamental,E1,E1,E1,1,1,0,-
+free,repeat-muted-30ms,44100,full-fundamental,E1,E1,E1 E1,2,2,1,40.63
+free,repeat-muted-30ms,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,40.63
+free,change-fourth,44100,full-fundamental,E1,A1,E1 A1,2,2,1,43.13
+free,change-fourth,44100,weak-fundamental,E1,A1,E1 A1,2,2,1,40.63
+free,change-octave,44100,full-fundamental,E1,E2,E1 E2,2,2,1,80.54
+free,change-octave,44100,weak-fundamental,E1,E2,E1 E2,2,2,1,80.54
+free,repeat-ringing,44100,full-fundamental,A1,A1,A1,1,1,0,-
+free,repeat-ringing,44100,weak-fundamental,A1,A1,A1,1,1,0,-
+free,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,33.15
+free,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,53.11
+free,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,35.65
+free,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,35.65
+free,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,70.57
+free,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,70.57
+free,repeat-ringing,44100,full-fundamental,D2,D2,D2,1,1,0,-
+free,repeat-ringing,44100,weak-fundamental,D2,D2,D2,1,1,0,-
+free,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,28.16
+free,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,28.16
+free,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,50.61
+free,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,50.61
+free,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,65.58
+free,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,65.58
+free,repeat-ringing,44100,full-fundamental,G2,G2,G2,1,1,0,-
+free,repeat-ringing,44100,weak-fundamental,G2,G2,G2,1,1,0,-
+free,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,40.63
+free,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,38.14
+free,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,33.15
+free,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,35.65
+free,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,60.59
+free,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,60.59
+free,repeat-ringing,44100,full-fundamental,C3,C3,C3,1,1,0,-
+free,repeat-ringing,44100,weak-fundamental,C3,C3,C3,1,1,0,-
+free,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,28.16
+free,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,28.16
+free,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,30.66
+free,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,30.66
+free,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,53.11
+free,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,53.11
+free,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+free,repeat-ringing,44100,weak-fundamental,G3,G3,G3,1,1,0,-
+free,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3 G3,2,2,1,28.16
+free,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,28.16
+free,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,23.17
+free,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,23.17
+free,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,50.61
+free,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,50.61
+palette-in,repeat-ringing,44100,full-fundamental,E1,E1,E1,1,1,0,-
+palette-in,repeat-ringing,44100,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-in,repeat-muted-30ms,44100,full-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-in,repeat-muted-30ms,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-in,change-fourth,44100,full-fundamental,E1,A1,E1 A1,2,2,1,43.13
+palette-in,change-fourth,44100,weak-fundamental,E1,A1,E1 A1,2,2,1,40.63
+palette-in,change-octave,44100,full-fundamental,E1,E2,E1 E2,2,2,1,80.54
+palette-in,change-octave,44100,weak-fundamental,E1,E2,E1 E2,2,2,1,80.54
+palette-in,repeat-ringing,44100,full-fundamental,A1,A1,A1,1,1,0,-
+palette-in,repeat-ringing,44100,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-in,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,33.15
+palette-in,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,53.11
+palette-in,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,35.65
+palette-in,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,35.65
+palette-in,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,70.57
+palette-in,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,70.57
+palette-in,repeat-ringing,44100,full-fundamental,D2,D2,D2,1,1,0,-
+palette-in,repeat-ringing,44100,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-in,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-in,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-in,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,30.66
+palette-in,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,30.66
+palette-in,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,65.58
+palette-in,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,65.58
+palette-in,repeat-ringing,44100,full-fundamental,G2,G2,G2,1,1,0,-
+palette-in,repeat-ringing,44100,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-in,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,28.16
+palette-in,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,28.16
+palette-in,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,28.16
+palette-in,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,28.16
+palette-in,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,60.59
+palette-in,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,60.59
+palette-in,repeat-ringing,44100,full-fundamental,C3,C3,C3,1,1,0,-
+palette-in,repeat-ringing,44100,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-in,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-in,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-in,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,30.66
+palette-in,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,30.66
+palette-in,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,53.11
+palette-in,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,53.11
+palette-in,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+palette-in,repeat-ringing,44100,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-in,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-in,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-in,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,23.17
+palette-in,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,23.17
+palette-in,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,50.61
+palette-in,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,50.61
+palette-off-chromatic,repeat-ringing,44100,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-chromatic,repeat-ringing,44100,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,44100,full-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-off-chromatic,repeat-muted-30ms,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-off-chromatic,change-fourth,44100,full-fundamental,E1,A1,E1 A1,2,2,1,55.60
+palette-off-chromatic,change-fourth,44100,weak-fundamental,E1,A1,E1 A1,2,2,1,53.11
+palette-off-chromatic,change-octave,44100,full-fundamental,E1,E2,E1 E2,2,2,1,93.02
+palette-off-chromatic,change-octave,44100,weak-fundamental,E1,E2,E1 E2,2,2,1,93.02
+palette-off-chromatic,repeat-ringing,44100,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-chromatic,repeat-ringing,44100,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,33.15
+palette-off-chromatic,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,53.11
+palette-off-chromatic,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,48.12
+palette-off-chromatic,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,48.12
+palette-off-chromatic,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,83.04
+palette-off-chromatic,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,83.04
+palette-off-chromatic,repeat-ringing,44100,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-chromatic,repeat-ringing,44100,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-off-chromatic,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-off-chromatic,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,63.08
+palette-off-chromatic,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,63.08
+palette-off-chromatic,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,78.05
+palette-off-chromatic,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,78.05
+palette-off-chromatic,repeat-ringing,44100,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-chromatic,repeat-ringing,44100,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,40.63
+palette-off-chromatic,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,38.14
+palette-off-chromatic,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,45.62
+palette-off-chromatic,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,48.12
+palette-off-chromatic,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,73.06
+palette-off-chromatic,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,73.06
+palette-off-chromatic,repeat-ringing,44100,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-chromatic,repeat-ringing,44100,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-off-chromatic,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-off-chromatic,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,43.13
+palette-off-chromatic,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,43.13
+palette-off-chromatic,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,65.58
+palette-off-chromatic,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,65.58
+palette-off-chromatic,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-chromatic,repeat-ringing,44100,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-off-chromatic,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-off-chromatic,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,35.65
+palette-off-chromatic,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,35.65
+palette-off-chromatic,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,63.08
+palette-off-chromatic,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,63.08
+palette-off-written-octave-up,repeat-ringing,44100,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,44100,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,44100,full-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-off-written-octave-up,repeat-muted-30ms,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-off-written-octave-up,change-fourth,44100,full-fundamental,E1,A1,E1 A1,2,2,1,78.05
+palette-off-written-octave-up,change-fourth,44100,weak-fundamental,E1,A1,E1 A1,2,2,1,75.56
+palette-off-written-octave-up,change-octave,44100,full-fundamental,E1,E2,E1 E2,2,2,1,115.46
+palette-off-written-octave-up,change-octave,44100,weak-fundamental,E1,E2,E1 E2,2,2,1,115.46
+palette-off-written-octave-up,repeat-ringing,44100,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,44100,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,33.15
+palette-off-written-octave-up,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,53.11
+palette-off-written-octave-up,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,70.57
+palette-off-written-octave-up,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,70.57
+palette-off-written-octave-up,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,105.49
+palette-off-written-octave-up,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,105.49
+palette-off-written-octave-up,repeat-ringing,44100,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,44100,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-off-written-octave-up,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-off-written-octave-up,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,85.53
+palette-off-written-octave-up,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,85.53
+palette-off-written-octave-up,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,100.50
+palette-off-written-octave-up,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,100.50
+palette-off-written-octave-up,repeat-ringing,44100,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,44100,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,40.63
+palette-off-written-octave-up,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,38.14
+palette-off-written-octave-up,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,68.07
+palette-off-written-octave-up,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,70.57
+palette-off-written-octave-up,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,95.51
+palette-off-written-octave-up,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,95.51
+palette-off-written-octave-up,repeat-ringing,44100,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,44100,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-off-written-octave-up,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-off-written-octave-up,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,65.58
+palette-off-written-octave-up,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,65.58
+palette-off-written-octave-up,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,88.03
+palette-off-written-octave-up,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,88.03
+palette-off-written-octave-up,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,44100,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-off-written-octave-up,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-off-written-octave-up,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,58.10
+palette-off-written-octave-up,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,58.10
+palette-off-written-octave-up,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,85.53
+palette-off-written-octave-up,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,85.53
+palette-off-written-octave-down,repeat-ringing,44100,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,44100,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,44100,full-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-off-written-octave-down,repeat-muted-30ms,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,40.63
+palette-off-written-octave-down,change-fourth,44100,full-fundamental,E1,A1,E1 A1,2,2,1,78.05
+palette-off-written-octave-down,change-fourth,44100,weak-fundamental,E1,A1,E1 A1,2,2,1,75.56
+palette-off-written-octave-down,change-octave,44100,full-fundamental,E1,E2,E1 E2,2,2,1,115.46
+palette-off-written-octave-down,change-octave,44100,weak-fundamental,E1,E2,E1 E2,2,2,1,115.46
+palette-off-written-octave-down,repeat-ringing,44100,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,44100,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,33.15
+palette-off-written-octave-down,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,53.11
+palette-off-written-octave-down,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,70.57
+palette-off-written-octave-down,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,70.57
+palette-off-written-octave-down,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,105.49
+palette-off-written-octave-down,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,105.49
+palette-off-written-octave-down,repeat-ringing,44100,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,44100,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-off-written-octave-down,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,28.16
+palette-off-written-octave-down,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,85.53
+palette-off-written-octave-down,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,85.53
+palette-off-written-octave-down,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,100.50
+palette-off-written-octave-down,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,100.50
+palette-off-written-octave-down,repeat-ringing,44100,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,44100,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,40.63
+palette-off-written-octave-down,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,38.14
+palette-off-written-octave-down,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,68.07
+palette-off-written-octave-down,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,70.57
+palette-off-written-octave-down,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,95.51
+palette-off-written-octave-down,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,95.51
+palette-off-written-octave-down,repeat-ringing,44100,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,44100,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-off-written-octave-down,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,28.16
+palette-off-written-octave-down,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,65.58
+palette-off-written-octave-down,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,65.58
+palette-off-written-octave-down,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,88.03
+palette-off-written-octave-down,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,88.03
+palette-off-written-octave-down,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,44100,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-off-written-octave-down,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,28.16
+palette-off-written-octave-down,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,58.10
+palette-off-written-octave-down,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,58.10
+palette-off-written-octave-down,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,85.53
+palette-off-written-octave-down,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,85.53
+free,repeat-ringing,48000,full-fundamental,E1,E1,E1,1,1,0,-
+free,repeat-ringing,48000,weak-fundamental,E1,E1,E1,1,1,0,-
+free,repeat-muted-30ms,48000,full-fundamental,E1,E1,E1 E1,2,2,1,39.50
+free,repeat-muted-30ms,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,42.00
+free,change-fourth,48000,full-fundamental,E1,A1,E1 A1,2,2,1,39.50
+free,change-fourth,48000,weak-fundamental,E1,A1,E1 A1,2,2,1,39.50
+free,change-octave,48000,full-fundamental,E1,E2,E1 E2,2,2,1,79.50
+free,change-octave,48000,weak-fundamental,E1,E2,E1 E2,2,2,1,77.00
+free,repeat-ringing,48000,full-fundamental,A1,A1,A1,1,1,0,-
+free,repeat-ringing,48000,weak-fundamental,A1,A1,A1,1,1,0,-
+free,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,32.00
+free,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,34.50
+free,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,32.00
+free,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,32.00
+free,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,69.50
+free,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,69.50
+free,repeat-ringing,48000,full-fundamental,D2,D2,D2,1,1,0,-
+free,repeat-ringing,48000,weak-fundamental,D2,D2,D2,1,1,0,-
+free,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,29.50
+free,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.50
+free,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,49.50
+free,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,49.50
+free,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,64.50
+free,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,64.50
+free,repeat-ringing,48000,full-fundamental,G2,G2,G2,1,1,0,-
+free,repeat-ringing,48000,weak-fundamental,G2,G2,G2,1,1,0,-
+free,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,39.50
+free,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.50
+free,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,29.50
+free,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,34.50
+free,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,57.00
+free,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,57.00
+free,repeat-ringing,48000,full-fundamental,C3,C3,C3,1,1,0,-
+free,repeat-ringing,48000,weak-fundamental,C3,C3,C3,1,1,0,-
+free,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,29.50
+free,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.50
+free,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,27.00
+free,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,27.00
+free,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,49.50
+free,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,52.00
+free,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+free,repeat-ringing,48000,weak-fundamental,G3,G3,G3,1,1,0,-
+free,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,29.50
+free,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.50
+free,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,19.50
+free,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,22.00
+free,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,47.00
+free,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,49.50
+palette-in,repeat-ringing,48000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-in,repeat-ringing,48000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-in,repeat-muted-30ms,48000,full-fundamental,E1,E1,E1 E1,2,2,1,39.50
+palette-in,repeat-muted-30ms,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,42.00
+palette-in,change-fourth,48000,full-fundamental,E1,A1,E1 A1,2,2,1,39.50
+palette-in,change-fourth,48000,weak-fundamental,E1,A1,E1 A1,2,2,1,39.50
+palette-in,change-octave,48000,full-fundamental,E1,E2,E1 E2,2,2,1,79.50
+palette-in,change-octave,48000,weak-fundamental,E1,E2,E1 E2,2,2,1,77.00
+palette-in,repeat-ringing,48000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-in,repeat-ringing,48000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-in,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,32.00
+palette-in,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,34.50
+palette-in,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,32.00
+palette-in,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,32.00
+palette-in,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,69.50
+palette-in,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,69.50
+palette-in,repeat-ringing,48000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-in,repeat-ringing,48000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-in,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-in,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-in,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,29.50
+palette-in,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,29.50
+palette-in,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,64.50
+palette-in,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,64.50
+palette-in,repeat-ringing,48000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-in,repeat-ringing,48000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-in,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,29.50
+palette-in,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,29.50
+palette-in,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,27.00
+palette-in,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,27.00
+palette-in,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,57.00
+palette-in,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,57.00
+palette-in,repeat-ringing,48000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-in,repeat-ringing,48000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-in,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-in,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-in,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,27.00
+palette-in,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,27.00
+palette-in,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,49.50
+palette-in,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,52.00
+palette-in,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-in,repeat-ringing,48000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-in,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-in,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-in,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,19.50
+palette-in,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,22.00
+palette-in,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,47.00
+palette-in,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,49.50
+palette-off-chromatic,repeat-ringing,48000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-chromatic,repeat-ringing,48000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,48000,full-fundamental,E1,E1,E1 E1,2,2,1,39.50
+palette-off-chromatic,repeat-muted-30ms,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,42.00
+palette-off-chromatic,change-fourth,48000,full-fundamental,E1,A1,E1 A1,2,2,1,49.50
+palette-off-chromatic,change-fourth,48000,weak-fundamental,E1,A1,E1 A1,2,2,1,49.50
+palette-off-chromatic,change-octave,48000,full-fundamental,E1,E2,E1 E2,2,2,1,89.50
+palette-off-chromatic,change-octave,48000,weak-fundamental,E1,E2,E1 E2,2,2,1,87.00
+palette-off-chromatic,repeat-ringing,48000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-chromatic,repeat-ringing,48000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,32.00
+palette-off-chromatic,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,34.50
+palette-off-chromatic,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,42.00
+palette-off-chromatic,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,42.00
+palette-off-chromatic,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,79.50
+palette-off-chromatic,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,79.50
+palette-off-chromatic,repeat-ringing,48000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-chromatic,repeat-ringing,48000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-off-chromatic,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-off-chromatic,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,59.50
+palette-off-chromatic,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,59.50
+palette-off-chromatic,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,74.50
+palette-off-chromatic,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,74.50
+palette-off-chromatic,repeat-ringing,48000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-chromatic,repeat-ringing,48000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,39.50
+palette-off-chromatic,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.50
+palette-off-chromatic,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,39.50
+palette-off-chromatic,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,44.50
+palette-off-chromatic,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,67.00
+palette-off-chromatic,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,67.00
+palette-off-chromatic,repeat-ringing,48000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-chromatic,repeat-ringing,48000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-off-chromatic,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-off-chromatic,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,37.00
+palette-off-chromatic,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,37.00
+palette-off-chromatic,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,59.50
+palette-off-chromatic,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,62.00
+palette-off-chromatic,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-chromatic,repeat-ringing,48000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-off-chromatic,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-off-chromatic,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,29.50
+palette-off-chromatic,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,32.00
+palette-off-chromatic,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,57.00
+palette-off-chromatic,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,59.50
+palette-off-written-octave-up,repeat-ringing,48000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,48000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,48000,full-fundamental,E1,E1,E1 E1,2,2,1,39.50
+palette-off-written-octave-up,repeat-muted-30ms,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,42.00
+palette-off-written-octave-up,change-fourth,48000,full-fundamental,E1,A1,E1 A1,2,2,1,69.50
+palette-off-written-octave-up,change-fourth,48000,weak-fundamental,E1,A1,E1 A1,2,2,1,69.50
+palette-off-written-octave-up,change-octave,48000,full-fundamental,E1,E2,E1 E2,2,2,1,109.50
+palette-off-written-octave-up,change-octave,48000,weak-fundamental,E1,E2,E1 E2,2,2,1,107.00
+palette-off-written-octave-up,repeat-ringing,48000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,48000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,32.00
+palette-off-written-octave-up,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,34.50
+palette-off-written-octave-up,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,62.00
+palette-off-written-octave-up,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,62.00
+palette-off-written-octave-up,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,99.50
+palette-off-written-octave-up,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,99.50
+palette-off-written-octave-up,repeat-ringing,48000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,48000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-off-written-octave-up,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-off-written-octave-up,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,79.50
+palette-off-written-octave-up,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,79.50
+palette-off-written-octave-up,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,94.50
+palette-off-written-octave-up,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,94.50
+palette-off-written-octave-up,repeat-ringing,48000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,48000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,39.50
+palette-off-written-octave-up,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.50
+palette-off-written-octave-up,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,59.50
+palette-off-written-octave-up,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,64.50
+palette-off-written-octave-up,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,87.00
+palette-off-written-octave-up,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,87.00
+palette-off-written-octave-up,repeat-ringing,48000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,48000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-off-written-octave-up,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-off-written-octave-up,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,57.00
+palette-off-written-octave-up,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,57.00
+palette-off-written-octave-up,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,79.50
+palette-off-written-octave-up,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,82.00
+palette-off-written-octave-up,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,48000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-off-written-octave-up,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-off-written-octave-up,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,49.50
+palette-off-written-octave-up,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,52.00
+palette-off-written-octave-up,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,77.00
+palette-off-written-octave-up,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,79.50
+palette-off-written-octave-down,repeat-ringing,48000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,48000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,48000,full-fundamental,E1,E1,E1 E1,2,2,1,39.50
+palette-off-written-octave-down,repeat-muted-30ms,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,42.00
+palette-off-written-octave-down,change-fourth,48000,full-fundamental,E1,A1,E1 A1,2,2,1,69.50
+palette-off-written-octave-down,change-fourth,48000,weak-fundamental,E1,A1,E1 A1,2,2,1,69.50
+palette-off-written-octave-down,change-octave,48000,full-fundamental,E1,E2,E1 E2,2,2,1,109.50
+palette-off-written-octave-down,change-octave,48000,weak-fundamental,E1,E2,E1 E2,2,2,1,107.00
+palette-off-written-octave-down,repeat-ringing,48000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,48000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,32.00
+palette-off-written-octave-down,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,34.50
+palette-off-written-octave-down,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,62.00
+palette-off-written-octave-down,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,62.00
+palette-off-written-octave-down,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,99.50
+palette-off-written-octave-down,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,99.50
+palette-off-written-octave-down,repeat-ringing,48000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,48000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-off-written-octave-down,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.50
+palette-off-written-octave-down,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,79.50
+palette-off-written-octave-down,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,79.50
+palette-off-written-octave-down,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,94.50
+palette-off-written-octave-down,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,94.50
+palette-off-written-octave-down,repeat-ringing,48000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,48000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,39.50
+palette-off-written-octave-down,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.50
+palette-off-written-octave-down,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,59.50
+palette-off-written-octave-down,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,64.50
+palette-off-written-octave-down,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,87.00
+palette-off-written-octave-down,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,87.00
+palette-off-written-octave-down,repeat-ringing,48000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,48000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-off-written-octave-down,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.50
+palette-off-written-octave-down,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,57.00
+palette-off-written-octave-down,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,57.00
+palette-off-written-octave-down,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,79.50
+palette-off-written-octave-down,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,82.00
+palette-off-written-octave-down,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,48000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-off-written-octave-down,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.50
+palette-off-written-octave-down,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,49.50
+palette-off-written-octave-down,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,52.00
+palette-off-written-octave-down,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,77.00
+palette-off-written-octave-down,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,79.50
+free,repeat-ringing,96000,full-fundamental,E1,E1,E1,1,1,0,-
+free,repeat-ringing,96000,weak-fundamental,E1,E1,E1,1,1,0,-
+free,repeat-muted-30ms,96000,full-fundamental,E1,E1,E1 E1,2,2,1,39.49
+free,repeat-muted-30ms,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,41.99
+free,change-fourth,96000,full-fundamental,E1,A1,E1 A1,2,2,1,39.49
+free,change-fourth,96000,weak-fundamental,E1,A1,E1 A1,2,2,1,39.49
+free,change-octave,96000,full-fundamental,E1,E2,E1 E2,2,2,1,76.99
+free,change-octave,96000,weak-fundamental,E1,E2,E1 E2,2,2,1,76.99
+free,repeat-ringing,96000,full-fundamental,A1,A1,A1,1,1,0,-
+free,repeat-ringing,96000,weak-fundamental,A1,A1,A1,1,1,0,-
+free,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,31.99
+free,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,51.99
+free,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,31.99
+free,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,31.99
+free,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,69.49
+free,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,69.49
+free,repeat-ringing,96000,full-fundamental,D2,D2,D2,1,1,0,-
+free,repeat-ringing,96000,weak-fundamental,D2,D2,D2,1,1,0,-
+free,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,29.49
+free,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.49
+free,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,49.49
+free,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,49.49
+free,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,64.49
+free,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,64.49
+free,repeat-ringing,96000,full-fundamental,G2,G2,G2,1,1,0,-
+free,repeat-ringing,96000,weak-fundamental,G2,G2,G2,1,1,0,-
+free,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,39.49
+free,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.49
+free,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,29.49
+free,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,34.49
+free,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,56.99
+free,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,56.99
+free,repeat-ringing,96000,full-fundamental,C3,C3,C3,1,1,0,-
+free,repeat-ringing,96000,weak-fundamental,C3,C3,C3,1,1,0,-
+free,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,29.49
+free,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.49
+free,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,26.99
+free,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,26.99
+free,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,49.49
+free,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,51.99
+free,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+free,repeat-ringing,96000,weak-fundamental,G3,G3,G3,1,1,0,-
+free,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,29.49
+free,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.49
+free,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,19.49
+free,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,21.99
+free,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,46.99
+free,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,49.49
+palette-in,repeat-ringing,96000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-in,repeat-ringing,96000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-in,repeat-muted-30ms,96000,full-fundamental,E1,E1,E1 E1,2,2,1,39.49
+palette-in,repeat-muted-30ms,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,41.99
+palette-in,change-fourth,96000,full-fundamental,E1,A1,E1 A1,2,2,1,39.49
+palette-in,change-fourth,96000,weak-fundamental,E1,A1,E1 A1,2,2,1,39.49
+palette-in,change-octave,96000,full-fundamental,E1,E2,E1 E2,2,2,1,76.99
+palette-in,change-octave,96000,weak-fundamental,E1,E2,E1 E2,2,2,1,76.99
+palette-in,repeat-ringing,96000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-in,repeat-ringing,96000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-in,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,31.99
+palette-in,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,51.99
+palette-in,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,31.99
+palette-in,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,31.99
+palette-in,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,69.49
+palette-in,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,69.49
+palette-in,repeat-ringing,96000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-in,repeat-ringing,96000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-in,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-in,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-in,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,29.49
+palette-in,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,29.49
+palette-in,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,64.49
+palette-in,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,64.49
+palette-in,repeat-ringing,96000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-in,repeat-ringing,96000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-in,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,29.49
+palette-in,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,29.49
+palette-in,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,26.99
+palette-in,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,26.99
+palette-in,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,56.99
+palette-in,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,56.99
+palette-in,repeat-ringing,96000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-in,repeat-ringing,96000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-in,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-in,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-in,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,26.99
+palette-in,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,26.99
+palette-in,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,49.49
+palette-in,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,51.99
+palette-in,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-in,repeat-ringing,96000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-in,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-in,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-in,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,19.49
+palette-in,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,21.99
+palette-in,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,46.99
+palette-in,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,49.49
+palette-off-chromatic,repeat-ringing,96000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-chromatic,repeat-ringing,96000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,96000,full-fundamental,E1,E1,E1 E1,2,2,1,39.49
+palette-off-chromatic,repeat-muted-30ms,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,41.99
+palette-off-chromatic,change-fourth,96000,full-fundamental,E1,A1,E1 A1,2,2,1,49.49
+palette-off-chromatic,change-fourth,96000,weak-fundamental,E1,A1,E1 A1,2,2,1,49.49
+palette-off-chromatic,change-octave,96000,full-fundamental,E1,E2,E1 E2,2,2,1,86.99
+palette-off-chromatic,change-octave,96000,weak-fundamental,E1,E2,E1 E2,2,2,1,86.99
+palette-off-chromatic,repeat-ringing,96000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-chromatic,repeat-ringing,96000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,31.99
+palette-off-chromatic,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,51.99
+palette-off-chromatic,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,41.99
+palette-off-chromatic,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,41.99
+palette-off-chromatic,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,79.49
+palette-off-chromatic,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,79.49
+palette-off-chromatic,repeat-ringing,96000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-chromatic,repeat-ringing,96000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-off-chromatic,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-off-chromatic,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,59.49
+palette-off-chromatic,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,59.49
+palette-off-chromatic,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,74.49
+palette-off-chromatic,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,74.49
+palette-off-chromatic,repeat-ringing,96000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-chromatic,repeat-ringing,96000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,39.49
+palette-off-chromatic,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.49
+palette-off-chromatic,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,39.49
+palette-off-chromatic,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,44.49
+palette-off-chromatic,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,66.99
+palette-off-chromatic,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,66.99
+palette-off-chromatic,repeat-ringing,96000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-chromatic,repeat-ringing,96000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-off-chromatic,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-off-chromatic,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,36.99
+palette-off-chromatic,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,36.99
+palette-off-chromatic,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,59.49
+palette-off-chromatic,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,61.99
+palette-off-chromatic,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-chromatic,repeat-ringing,96000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-chromatic,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-off-chromatic,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-off-chromatic,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,29.49
+palette-off-chromatic,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,31.99
+palette-off-chromatic,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,56.99
+palette-off-chromatic,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,59.49
+palette-off-written-octave-up,repeat-ringing,96000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,96000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,96000,full-fundamental,E1,E1,E1 E1,2,2,1,39.49
+palette-off-written-octave-up,repeat-muted-30ms,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,41.99
+palette-off-written-octave-up,change-fourth,96000,full-fundamental,E1,A1,E1 A1,2,2,1,69.49
+palette-off-written-octave-up,change-fourth,96000,weak-fundamental,E1,A1,E1 A1,2,2,1,69.49
+palette-off-written-octave-up,change-octave,96000,full-fundamental,E1,E2,E1 E2,2,2,1,106.99
+palette-off-written-octave-up,change-octave,96000,weak-fundamental,E1,E2,E1 E2,2,2,1,106.99
+palette-off-written-octave-up,repeat-ringing,96000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,96000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,31.99
+palette-off-written-octave-up,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,51.99
+palette-off-written-octave-up,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,61.99
+palette-off-written-octave-up,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,61.99
+palette-off-written-octave-up,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,99.49
+palette-off-written-octave-up,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,99.49
+palette-off-written-octave-up,repeat-ringing,96000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,96000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-off-written-octave-up,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-off-written-octave-up,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,79.49
+palette-off-written-octave-up,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,79.49
+palette-off-written-octave-up,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,94.49
+palette-off-written-octave-up,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,94.49
+palette-off-written-octave-up,repeat-ringing,96000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,96000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,39.49
+palette-off-written-octave-up,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.49
+palette-off-written-octave-up,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,59.49
+palette-off-written-octave-up,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,64.49
+palette-off-written-octave-up,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,86.99
+palette-off-written-octave-up,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,86.99
+palette-off-written-octave-up,repeat-ringing,96000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,96000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-off-written-octave-up,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-off-written-octave-up,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,56.99
+palette-off-written-octave-up,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,56.99
+palette-off-written-octave-up,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,79.49
+palette-off-written-octave-up,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,81.99
+palette-off-written-octave-up,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-up,repeat-ringing,96000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-up,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-off-written-octave-up,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-off-written-octave-up,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,49.49
+palette-off-written-octave-up,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,51.99
+palette-off-written-octave-up,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,76.99
+palette-off-written-octave-up,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,79.49
+palette-off-written-octave-down,repeat-ringing,96000,full-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,96000,weak-fundamental,E1,E1,E1,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,96000,full-fundamental,E1,E1,E1 E1,2,2,1,39.49
+palette-off-written-octave-down,repeat-muted-30ms,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,41.99
+palette-off-written-octave-down,change-fourth,96000,full-fundamental,E1,A1,E1 A1,2,2,1,69.49
+palette-off-written-octave-down,change-fourth,96000,weak-fundamental,E1,A1,E1 A1,2,2,1,69.49
+palette-off-written-octave-down,change-octave,96000,full-fundamental,E1,E2,E1 E2,2,2,1,106.99
+palette-off-written-octave-down,change-octave,96000,weak-fundamental,E1,E2,E1 E2,2,2,1,106.99
+palette-off-written-octave-down,repeat-ringing,96000,full-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,96000,weak-fundamental,A1,A1,A1,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,31.99
+palette-off-written-octave-down,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,51.99
+palette-off-written-octave-down,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,61.99
+palette-off-written-octave-down,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,61.99
+palette-off-written-octave-down,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,99.49
+palette-off-written-octave-down,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,99.49
+palette-off-written-octave-down,repeat-ringing,96000,full-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,96000,weak-fundamental,D2,D2,D2,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-off-written-octave-down,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,29.49
+palette-off-written-octave-down,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,79.49
+palette-off-written-octave-down,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,79.49
+palette-off-written-octave-down,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,94.49
+palette-off-written-octave-down,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,94.49
+palette-off-written-octave-down,repeat-ringing,96000,full-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,96000,weak-fundamental,G2,G2,G2,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,39.49
+palette-off-written-octave-down,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,39.49
+palette-off-written-octave-down,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,59.49
+palette-off-written-octave-down,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,64.49
+palette-off-written-octave-down,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,86.99
+palette-off-written-octave-down,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,86.99
+palette-off-written-octave-down,repeat-ringing,96000,full-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,96000,weak-fundamental,C3,C3,C3,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-off-written-octave-down,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,29.49
+palette-off-written-octave-down,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,56.99
+palette-off-written-octave-down,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,56.99
+palette-off-written-octave-down,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,79.49
+palette-off-written-octave-down,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,81.99
+palette-off-written-octave-down,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-down,repeat-ringing,96000,weak-fundamental,G3,G3,G3,1,1,0,-
+palette-off-written-octave-down,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-off-written-octave-down,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,29.49
+palette-off-written-octave-down,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,49.49
+palette-off-written-octave-down,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,51.99
+palette-off-written-octave-down,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,76.99
+palette-off-written-octave-down,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,79.49

@@ -128,12 +128,13 @@ namespace
         int sounding = -1, candidate = -1, stableFrames = 0, silentFrames = 0;
     };
 
-    // The Bass2MIDI note state machine with default settings.
+    // The Bass2MIDI note state machine with default settings (and the case's song palette, if any).
     class StateMachineDecider final : public Decider
     {
     public:
-        StateMachineDecider (const ReferenceSetup& analysis, double sampleRateHz)
+        StateMachineDecider (const ReferenceSetup& analysis, double sampleRateHz, const NotePalette& palette)
         {
+            machine.setPalette (palette);
             NoteStateMachine::Settings s;
             s.frameIntervalSeconds = analysis.hopSamples / sampleRateHz;
             s.onsetSettleMs = 0.75 * 1000.0 * analysis.yin.windowSamples / sampleRateHz;
@@ -174,6 +175,11 @@ namespace
         std::function<ReferenceSetup (double)> analysis; // frame (window) and hop; YIN config for plain setups
         bool stateMachine = false;
         bool multiRes = false;                           // MultiResolutionPitchTracker instead of plain YIN
+        // Song palette for the played notes of a case (Free mode if unset). Applied to the tracker and
+        // the state machine alike.
+        std::function<NotePalette (const std::vector<int>& playedNotes)> palette;
+
+        NotePalette paletteFor (const std::vector<int>& playedNotes) const { return palette ? palette (playedNotes) : NotePalette {}; }
     };
 
     // Frame/hop plan for the multi-resolution tracker: frame = its longest rung, hop as full-range-yin.
@@ -191,10 +197,11 @@ namespace
         return plan;
     }
 
-    std::unique_ptr<Decider> makeDecider (const EvalSetup& setup, const ReferenceSetup& analysis, double sampleRateHz)
+    std::unique_ptr<Decider> makeDecider (const EvalSetup& setup, const ReferenceSetup& analysis, double sampleRateHz,
+                                          const NotePalette& palette)
     {
         if (setup.stateMachine)
-            return std::make_unique<StateMachineDecider> (analysis, sampleRateHz);
+            return std::make_unique<StateMachineDecider> (analysis, sampleRateHz, palette);
         return std::make_unique<ReferenceDebouncer>();
     }
 
@@ -251,11 +258,12 @@ namespace
     }
 
     // Runs one analysis setup over one signal: onFrame (candidate, hopPeakLinear, frameEnd).
-    void runSignal (const ReferenceSetup& setup, bool multiRes, double sampleRateHz, const std::vector<float>& signal,
-                    const std::function<void (const PitchCandidate&, double, std::int64_t)>& onFrame)
+    void runSignal (const ReferenceSetup& setup, bool multiRes, const NotePalette& palette, double sampleRateHz,
+                    const std::vector<float>& signal, const std::function<void (const PitchCandidate&, double, std::int64_t)>& onFrame)
     {
         YinPitchEstimator estimator;
         MultiResolutionPitchTracker tracker;
+        tracker.setPalette (palette);
         AnalysisFramer framer;
         const bool analysisReady = multiRes ? tracker.prepare (sampleRateHz, {}) && tracker.getFrameSamples() == setup.yin.windowSamples
                                             : estimator.prepare (sampleRateHz, setup.yin);
@@ -302,11 +310,12 @@ namespace
         const auto sustainStart = onset + setup.yin.windowSamples;
         const auto sustainEnd = onset + static_cast<std::int64_t> (0.6 * spec.sampleRateHz);
 
-        auto decider = makeDecider (evalSetup, setup, spec.sampleRateHz);
+        const auto palette = evalSetup.paletteFor ({ expectedNote });
+        auto decider = makeDecider (evalSetup, setup, spec.sampleRateHz, palette);
         std::vector<Event> events;
         std::vector<double> centsErrors;
 
-        runSignal (setup, evalSetup.multiRes, spec.sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
+        runSignal (setup, evalSetup.multiRes, palette, spec.sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
         {
             decider->process (c, hopPeak, end, events);
 
@@ -435,10 +444,11 @@ namespace
         r.secondNote = seq.secondNote;
 
         const auto signal = renderSequence (seq, sampleRateHz, variant.fundamentalGainDb, 0.3);
-        auto decider = makeDecider (evalSetup, setup, sampleRateHz);
+        const auto palette = evalSetup.paletteFor ({ seq.firstNote, seq.secondNote });
+        auto decider = makeDecider (evalSetup, setup, sampleRateHz, palette);
         std::vector<Event> events;
 
-        runSignal (setup, evalSetup.multiRes, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
+        runSignal (setup, evalSetup.multiRes, palette, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
         {
             decider->process (c, hopPeak, end, events);
         });
@@ -480,10 +490,11 @@ namespace
         const auto setup = evalSetup.analysis (sampleRateHz);
         NoiseResult r { evalSetup.name, sampleRateHz, levelDbfs, durationSeconds };
         const auto signal = renderNoise (sampleRateHz, durationSeconds, levelDbfs, 7);
-        auto decider = makeDecider (evalSetup, setup, sampleRateHz);
+        const auto palette = evalSetup.paletteFor ({ 28, 33, 38, 43 }); // open strings stand in for a song
+        auto decider = makeDecider (evalSetup, setup, sampleRateHz, palette);
         std::vector<Event> events;
 
-        runSignal (setup, evalSetup.multiRes, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
+        runSignal (setup, evalSetup.multiRes, palette, sampleRateHz, signal, [&] (const PitchCandidate& c, double hopPeak, std::int64_t end)
         {
             ++r.frames;
             r.validFrames += c.valid ? 1 : 0;
@@ -600,7 +611,11 @@ namespace
 
         out << "Setups: `warf-like-yin` and `full-range-yin` use the reference debounce rule (Warf defaults); "
                "`full-range-yin+nsm` feeds `full-range-yin` into the Bass2MIDI `NoteStateMachine` with default settings; "
-               "`multires-yin+nsm` uses the `MultiResolutionPitchTracker` (pitch-adaptive windows, sub-octave check) instead.\n\n";
+               "`multires-yin+nsm` uses the `MultiResolutionPitchTracker` (pitch-adaptive windows, sub-octave check) instead. "
+               "With `--palette`, `free` is `multires-yin+nsm` and the `palette-*` setups add a song palette built around the "
+               "played notes (`palette-in`: played notes plus a minor-pentatonic neighbourhood; `palette-off-*`: the played notes "
+               "are missing - chromatic neighbours only, or the written part an octave above/below what is played). "
+               "Noise runs use the four open strings as palette.\n\n";
 
         out << "Columns: cases | first Note On correct | missed (no Note On) | first Note On octave error | "
                "first Note On other wrong note | extra Note Ons beyond the first (duplicates/wrong) | "
@@ -728,6 +743,7 @@ int main (int argc, char** argv)
 {
     std::filesystem::path outDir = "baseline-results";
     bool quick = false;
+    bool paletteStudy = false; // score-guidance study: Free vs. song palettes instead of the reference setups
 
     for (int i = 1; i < argc; ++i)
     {
@@ -736,9 +752,11 @@ int main (int argc, char** argv)
             outDir = argv[++i];
         else if (arg == "--quick")
             quick = true;
+        else if (arg == "--palette")
+            paletteStudy = true;
         else
         {
-            std::cerr << "usage: " << argv[0] << " [--out <directory>] [--quick]\n";
+            std::cerr << "usage: " << argv[0] << " [--out <directory>] [--quick] [--palette]\n";
             return 2;
         }
     }
@@ -749,12 +767,41 @@ int main (int argc, char** argv)
                                                   : std::vector<double> { 44100.0, 48000.0, 96000.0 };
     const std::vector<Variant> variants { { "full-fundamental", 0.0 }, { "weak-fundamental", -18.0 } };
     const std::vector<Level> levels { { "medium", 0.3 }, { "soft", 0.03 } };
-    const std::vector<EvalSetup> setups {
-        { "warf-like-yin", warfLikeYin, false },
-        { "full-range-yin", fullRangeYin, false },
-        { "full-range-yin+nsm", fullRangeYin, true },
-        { "multires-yin+nsm", multiResolutionPlan, true, true },
+    const std::vector<EvalSetup> referenceSetups {
+        { "warf-like-yin", warfLikeYin, false, false, {} },
+        { "full-range-yin", fullRangeYin, false, false, {} },
+        { "full-range-yin+nsm", fullRangeYin, true, false, {} },
+        { "multires-yin+nsm", multiResolutionPlan, true, true, {} },
     };
+    // Score guidance: every palette is built around the notes actually played. "in" contains them
+    // (plus a minor-pentatonic neighbourhood); the others leave them out on purpose - a chromatic
+    // passing tone, or the part played an octave below/above the written one (the hardest cases
+    // for octave-error suppression, since the written note IS the octave error).
+    const auto pal = [] (std::initializer_list<int> offsets, bool excludePlayed)
+    {
+        return [offsets = std::vector<int> (offsets), excludePlayed] (const std::vector<int>& played)
+        {
+            NotePalette p;
+            for (const int n : played)
+                for (const int o : offsets)
+                    p.add (n + o);
+            if (! excludePlayed)
+                return p;
+            NotePalette without;
+            for (int n = 0; n < 128; ++n)
+                if (p.contains (n) && std::find (played.begin(), played.end(), n) == played.end())
+                    without.add (n);
+            return without;
+        };
+    };
+    const std::vector<EvalSetup> paletteSetups {
+        { "free", multiResolutionPlan, true, true, {} },
+        { "palette-in", multiResolutionPlan, true, true, pal ({ 0, 3, 5, 7, 10 }, false) },
+        { "palette-off-chromatic", multiResolutionPlan, true, true, pal ({ 1, 3, 5, 8, 10 }, true) },
+        { "palette-off-written-octave-up", multiResolutionPlan, true, true, pal ({ 12, 15, 17, 19, 22 }, true) },
+        { "palette-off-written-octave-down", multiResolutionPlan, true, true, pal ({ -12, -9, -7, -5, -2 }, true) },
+    };
+    const auto& setups = paletteStudy ? paletteSetups : referenceSetups;
 
     std::vector<SequenceSpec> sequenceSpecs;
     for (const int note : { 28, 33, 38, 43, 48, 55 })
