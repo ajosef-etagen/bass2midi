@@ -50,11 +50,14 @@ if(BASS2MIDI_BUILD_TESTS)
     add_executable(bass2midi_songmode_eval eval/SongModeEval.cpp)
     target_link_libraries(bass2midi_songmode_eval PRIVATE bass2midi_eval bass2midi_song bass2midi_warnings)
 
+    add_executable(bass2midi_barmode_eval eval/BarModeEval.cpp)
+    target_link_libraries(bass2midi_barmode_eval PRIVATE bass2midi_eval bass2midi_song bass2midi_warnings)
+
     add_executable(bass2midi_songinfo eval/SongInfo.cpp)
     target_link_libraries(bass2midi_songinfo PRIVATE bass2midi_song bass2midi_warnings)
 
     enable_testing()
-    add_executable(bass2midi_tests tests/DspTests.cpp tests/NoteStateMachineTests.cpp tests/MultiResolutionTests.cpp tests/SongTests.cpp tests/AttackDetectorTests.cpp tests/SongModeTests.cpp)
+    add_executable(bass2midi_tests tests/DspTests.cpp tests/NoteStateMachineTests.cpp tests/MultiResolutionTests.cpp tests/SongTests.cpp tests/AttackDetectorTests.cpp tests/SongModeTests.cpp tests/BarPlayerTests.cpp)
     target_link_libraries(bass2midi_tests PRIVATE bass2midi_eval bass2midi_song doctest::doctest bass2midi_warnings)
     target_compile_definitions(bass2midi_tests PRIVATE BASS2MIDI_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
     add_test(NAME bass2midi_tests COMMAND bass2midi_tests)

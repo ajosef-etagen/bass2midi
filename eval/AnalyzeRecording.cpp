@@ -2,7 +2,7 @@
 // with default settings, 2.5 ms hop) and writes the emitted MIDI notes and a per-frame trace.
 //
 // Usage: bass2midi_analyze <file.wav> [--out <dir>] [--channel N] [--gate dBFS]
-//                          [--song <file.gp|gp5> [--mode song|palette] [--start-note N] [--repluck 0|1]
+//                          [--song <file.gp|gp5> [--mode song|palette|bar] [--start-note N] [--start-bar B] [--repluck 0|1]
 //                           [--min-confidence C] [--skip-margin X]]
 //
 // With --song, the recording additionally runs through BassToMidiProcessor in Song Mode (the app's
@@ -49,6 +49,8 @@ int main (int argc, char** argv)
     double skipMargin = SongFollower::Settings {}.skipMargin;
     double minConfidence = SongFollower::Settings {}.minPredictConfidence;
     bool paletteOnly = false; // --mode palette: Free mode with the song palette instead of Song Mode
+    bool barMode = false;     // --mode bar: bar playback (anchors start bars, the song's notes play)
+    int startBar = 0;         // --start-bar (written bar, 1-based) for --mode bar
 
     for (int i = 2; i + 1 < argc; i += 2)
     {
@@ -64,7 +66,12 @@ int main (int argc, char** argv)
         else if (arg == "--start-note")
             startNote = std::stoi (argv[i + 1]);
         else if (arg == "--mode")
+        {
             paletteOnly = std::string (argv[i + 1]) == "palette";
+            barMode = std::string (argv[i + 1]) == "bar";
+        }
+        else if (arg == "--start-bar")
+            startBar = std::stoi (argv[i + 1]) - 1;
         else if (arg == "--min-confidence")
             minConfidence = std::stod (argv[i + 1]);
         else if (arg == "--skip-margin")
@@ -180,7 +187,8 @@ int main (int argc, char** argv)
             std::cerr << error << "\n";
             return 1;
         }
-        const auto timeline = song::expectedNotes (s, song::findBassTrack (s));
+        std::vector<TimelineBar> bars;
+        const auto timeline = song::expectedNotes (s, song::findBassTrack (s), bars);
         BassToMidiProcessor processor;
         BassToMidiProcessor::Settings ps;
         ps.notes.gateOpenDbfs = gateDbfs;
@@ -192,17 +200,26 @@ int main (int argc, char** argv)
             std::cerr << "cannot prepare the processor\n";
             return 1;
         }
-        processor.setTimeline (timeline.data(), static_cast<int> (timeline.size()));
+        processor.setTimeline (timeline.data(), static_cast<int> (timeline.size()), bars.data(), static_cast<int> (bars.size()));
         processor.setSongPosition (startNote);
-        processor.setMode (paletteOnly ? BassToMidiProcessor::Mode::free : BassToMidiProcessor::Mode::song);
+        int playedStartBar = 0;
+        for (std::size_t b = 0; b < bars.size(); ++b)
+            if (bars[b].writtenBar >= startBar)
+            {
+                playedStartBar = static_cast<int> (b);
+                break;
+            }
+        processor.setBarStart (playedStartBar);
+        processor.setMode (barMode ? BassToMidiProcessor::Mode::bar
+                                   : paletteOnly ? BassToMidiProcessor::Mode::free : BassToMidiProcessor::Mode::song);
         if (paletteOnly)
             processor.setPalette (song::paletteFromTrack (s.tracks[static_cast<std::size_t> (song::findBassTrack (s))]));
 
         std::ofstream songEvents (outDir / (stem + "_song_events.csv"));
         std::ofstream attacks (outDir / (stem + "_attacks.csv"));
         songEvents << "time_ms,type,note,name,velocity,predicted,correction\n";
-        attacks << "time_ms,velocity,assigned_index,predicted_note,confidence\n";
-        int lastAttackCount = 0;
+        attacks << "time_ms,velocity,assigned_index,predicted_note,confidence,bar_state,played_bar,written_bar\n";
+        int lastAttackCount = 0, lastVerdicts = 0, lastMatches = 0;
         constexpr int block = 64;
         for (std::size_t p = 0; p < signal.size(); p += block)
         {
@@ -217,14 +234,26 @@ int main (int argc, char** argv)
                            << (e.correction ? 1 : 0) << '\n';
             }
             const auto& d = processor.getDiagnostics();
+            if (barMode && d.rootMatches + d.rootMismatches != lastVerdicts)
+            {
+                lastVerdicts = d.rootMatches + d.rootMismatches;
+                attacks << "# verdict at " << 1000.0 * static_cast<double> (p) / rate << " ms: played " << midi::noteName (d.lastValidatedNote)
+                        << ", bar " << d.barWritten + 1 << (d.rootMatches != lastMatches ? " match" : " MISMATCH")
+                        << (d.barTrusted ? "" : " (fallback)") << ", tempo x" << d.barTempoRatio << '\n';
+                lastMatches = d.rootMatches;
+            }
             if (d.attackCount != lastAttackCount)
             {
                 lastAttackCount = d.attackCount;
                 attacks << 1000.0 * static_cast<double> (d.lastAttackSample) / rate << ',' << d.lastAttackVelocity << ','
-                        << d.lastPredictedIndex << ',' << d.lastPredictedNote << ',' << d.confidence << '\n';
+                        << d.lastPredictedIndex << ',' << d.lastPredictedNote << ',' << d.confidence << ',' << d.barState << ','
+                        << d.barPlayed << ',' << d.barWritten + 1 << '\n';
             }
         }
         const auto& d = processor.getDiagnostics();
+        if (barMode)
+            std::printf ("Bar playback: %d bars started, %d stops, %d fallbacks, roots %d match / %d mismatch, tempo x%.2f\n",
+                         d.barsStarted, d.barStops, d.barFallbacks, d.rootMatches, d.rootMismatches, d.barTempoRatio);
         std::printf (paletteOnly ? "Free + palette (%s," : "Song Mode (%s, %zu expected notes, start note %d, re-pluck %s): %d attacks, %d predicted, %d corrected, "
                      "%d re-aligned, %d extra, %d ghost, %d unpitched, %d matches / %d mismatches, final confidence %.2f, tempo x%.2f\n",
                      songPath.c_str(), timeline.size(), startNote, repluck ? "on" : "off", d.attackCount, d.predictions, d.corrections,

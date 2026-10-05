@@ -77,7 +77,14 @@ namespace bass2midi::song
 
     std::vector<ExpectedNote> expectedNotes (const Song& song, int trackIndex)
     {
+        std::vector<TimelineBar> bars;
+        return expectedNotes (song, trackIndex, bars);
+    }
+
+    std::vector<ExpectedNote> expectedNotes (const Song& song, int trackIndex, std::vector<TimelineBar>& bars)
+    {
         std::vector<ExpectedNote> out;
+        bars.clear();
         if (trackIndex < 0 || trackIndex >= static_cast<int> (song.tracks.size()) || song.masterBars.empty())
             return out;
         const auto& track = song.tracks[static_cast<std::size_t> (trackIndex)];
@@ -93,6 +100,13 @@ namespace bass2midi::song
         for (const int barIndex : playingOrder (song))
         {
             const auto& bar = song.masterBars[static_cast<std::size_t> (barIndex)];
+            const int playedBar = static_cast<int> (bars.size());
+            TimelineBar timelineBar;
+            timelineBar.writtenBar = barIndex;
+            timelineBar.startSeconds = barSeconds;
+            timelineBar.lengthSeconds = tempo.seconds (bar.startQuarters, bar.startQuarters + bar.lengthQuarters);
+            timelineBar.numerator = bar.numerator;
+            bars.push_back (timelineBar);
             for (const auto* note : byBar[static_cast<std::size_t> (barIndex)])
             {
                 const double offsetQuarters = note->startQuarters - bar.startQuarters;
@@ -119,6 +133,7 @@ namespace bass2midi::song
                 expected.durationSeconds = duration;
                 expected.bar = barIndex;
                 expected.beat = 1.0 + offsetQuarters * bar.denominator / 4.0;
+                expected.playedBar = playedBar;
 
                 if (! out.empty() && std::abs (out.back().startSeconds - start) < 1.0e-6)
                 {
@@ -128,11 +143,20 @@ namespace bass2midi::song
                 }
                 out.push_back (expected);
             }
-            barSeconds += tempo.seconds (bar.startQuarters, bar.startQuarters + bar.lengthQuarters);
+            barSeconds += bars.back().lengthSeconds;
         }
 
         std::stable_sort (out.begin(), out.end(),
                           [] (const ExpectedNote& a, const ExpectedNote& b) { return a.startSeconds < b.startSeconds; });
+        for (std::size_t i = out.size(); i-- > 0;) // notes are in bar order: first index = lowest
+        {
+            auto& b = bars[static_cast<std::size_t> (out[i].playedBar)];
+            b.firstNote = static_cast<int> (i);
+            ++b.noteCount;
+        }
+        for (auto& b : bars)
+            if (b.noteCount == 0)
+                b.firstNote = 0;
         return out;
     }
 }

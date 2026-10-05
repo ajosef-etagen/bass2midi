@@ -79,4 +79,7 @@ namespace bass2midi::song
     // order, tempo map applied, tied continuations merged into their note, simultaneous attacks
     // reduced to the lowest note, grace notes (no metric time) dropped.
     std::vector<ExpectedNote> expectedNotes (const Song& song, int track);
+
+    // Same notes plus the bars in playing order they belong to (every played bar, also empty ones).
+    std::vector<ExpectedNote> expectedNotes (const Song& song, int track, std::vector<TimelineBar>& bars);
 }

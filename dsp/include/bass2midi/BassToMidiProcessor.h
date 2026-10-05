@@ -2,6 +2,7 @@
 
 #include "bass2midi/AnalysisFramer.h"
 #include "bass2midi/AttackDetector.h"
+#include "bass2midi/BarPlayer.h"
 #include "bass2midi/ExpectedNote.h"
 #include "bass2midi/MultiResolutionPitchTracker.h"
 #include "bass2midi/NotePalette.h"
@@ -38,7 +39,10 @@ namespace bass2midi
     class BassToMidiProcessor
     {
     public:
-        enum class Mode : std::uint8_t { free, song };
+        // free: pitch detection. song: attack-triggered expected notes (SongFollower). bar: bar
+        // playback - the player's anchor attacks start bars, the song's notes are played (BarPlayer);
+        // Free output while the played roots contradict the score.
+        enum class Mode : std::uint8_t { free, song, bar };
 
         struct Settings
         {
@@ -46,12 +50,16 @@ namespace bass2midi
             NoteStateMachine::Settings notes;   // frame interval / settle time are derived in prepare()
             AttackDetector::Settings attacks;
             SongFollower::Settings follower;
+            BarPlayer::Settings bars;
             double hopSeconds = 0.0025;
             double onsetSettleWindowFraction = 0.75;
             double validationWindowMs = 200.0;
             int validationFrames = 3;
             double validationMinClarity = 0.9;
             double toleranceCents = 40.0;       // a validation frame must be this close to a semitone
+            bool barModePeriodicity = true;     // bar playback uses the periodicity break (re-plucks of a ringing
+                                                // string): only attacks near an expected downbeat count there, so its
+                                                // false triggers elsewhere do no harm
             double ghostRelativeDb = 20.0;      // Song Mode ignores attacks this far below the previous accepted
                                                 // attack (dead-note clicks); they are left to the pitch path
             double ghostReferenceSeconds = 3.0; // ... if that attack is at most this old
@@ -97,6 +105,13 @@ namespace bass2midi
             int lastValidationMatch = -1;   // 1 match, 0 mismatch, -1 none yet
             std::int64_t lastTriggerLatencySamples = -1; // predicted Note On block end - attack detection
             int predictions = 0, corrections = 0, matches = 0, mismatches = 0, resyncs = 0, extraAttacks = 0, ghostAttacks = 0, unpitchedAttacks = 0;
+            // Bar playback
+            bool barActive = false, barOutputting = false, barTrusted = true;
+            int barState = 0;               // BarPlayer::State
+            int barPlayed = -1, barWritten = -1, barCount = 0;
+            double barTempoRatio = 1.0;
+            double nextAnchorSeconds = -1.0;
+            int barsStarted = 0, barStops = 0, rootMatches = 0, rootMismatches = 0, barFallbacks = 0;
         };
 
         // Non-real-time.
@@ -114,6 +129,10 @@ namespace bass2midi
         // (the app retires old timelines on the message thread only after the audio thread has
         // acknowledged the swap). Resets the position to 0.
         void setTimeline (const ExpectedNote* notes, int count) noexcept;
+        // With the bars in playing order (needed for bar playback). Same ownership rule.
+        void setTimeline (const ExpectedNote* notes, int count, const TimelineBar* bars, int barCount) noexcept;
+        // Real-time safe. Bar playback waits for the anchor attack of this bar (playing order).
+        void setBarStart (int playedBar) noexcept { pendingBarStart = std::max (0, playedBar); }
         void setSongPosition (int index) noexcept;
         // Real-time safe. Re-pluck detection of ringing notes via the periodicity break (experimental,
         // see AttackDetector).
@@ -137,6 +156,8 @@ namespace bass2midi
         void emit (const NoteStateMachine::Output& o, std::int64_t sample, bool predicted, bool correction, Output& out) noexcept;
         double seconds (std::int64_t sample) const noexcept { return static_cast<double> (sample) / sampleRateHz; }
         bool songActive() const noexcept { return mode == Mode::song && follower.getCount() > 0; }
+        bool barActive() const noexcept { return mode == Mode::bar && timelineBarCount > 0; }
+        void emitBar (const BarPlayer::Output& o, std::int64_t sample, Output& out) noexcept;
 
         Settings settings;
         double sampleRateHz = 0.0;
@@ -145,7 +166,11 @@ namespace bass2midi
         NoteStateMachine noteMachine;
         AttackDetector attackDetector;
         SongFollower follower;
-        Mode mode = Mode::free;
+        Mode mode = Mode::free, appliedMode = Mode::free;
+        BarPlayer barPlayer;
+        int timelineBarCount = 0;
+        int pendingBarStart = 0;          // -1: none pending
+        bool noteMachineSilent = false;   // Free path runs without output while bar playback outputs
         int validationFramesNeeded = 3, validationWindowSamples = 9600;
 
         std::int64_t samplePosition = 0;
@@ -159,6 +184,7 @@ namespace bass2midi
         bool validating = false;
         std::int64_t validationAttackSample = 0;
         int validationIndex = -1;       // follower index assigned to the attack (-1: none)
+        static constexpr int barAnchorVerdict = -2; // validationIndex of a bar-playback anchor
         int validationCandidate = -1, validationRun = 0;
         bool validationPredicted = false, validationVoiced = false;
         int unpitchedDecisionSamples = 2880;

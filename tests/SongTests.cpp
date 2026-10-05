@@ -247,3 +247,34 @@ TEST_CASE ("Song timeline: malformed repeat structures stay bounded")
     CHECK (! order.empty());
     CHECK (song::expectedNotes (s, 0).empty()); // no tracks
 }
+
+TEST_CASE ("Song timeline: bars in playing order carry their notes")
+{
+    song::Song s;
+    std::string error;
+    REQUIRE_MESSAGE (song::loadSongFile (dataPath ("repeats.gp"), s, error), error);
+    std::vector<TimelineBar> bars;
+    const auto notes = song::expectedNotes (s, 0, bars);
+    REQUIRE (bars.size() == 7); // 0 1 2 0 1 3 4
+    const std::vector<int> written { 0, 1, 2, 0, 1, 3, 4 };
+    for (std::size_t i = 0; i < bars.size(); ++i)
+    {
+        CAPTURE (i);
+        CHECK (bars[i].writtenBar == written[i]);
+        CHECK (bars[i].startSeconds == doctest::Approx (2.0 * static_cast<double> (i)));
+        CHECK (bars[i].noteCount == 1);
+        CHECK (bars[i].firstNote == static_cast<int> (i));
+        CHECK (notes[i].playedBar == static_cast<int> (i));
+    }
+    CHECK (bars[6].lengthSeconds == doctest::Approx (4.0)); // 60 bpm from bar 4
+
+    // minimal.gp: bar 1 holds 2 attacked notes (the tie merges into B1), bar 2 holds 5.
+    REQUIRE (song::loadSongFile (dataPath ("minimal.gp"), s, error));
+    const auto m = song::expectedNotes (s, 1, bars);
+    REQUIRE (bars.size() == 2);
+    CHECK (bars[0].noteCount == 2);
+    CHECK (bars[1].firstNote == 2);
+    CHECK (bars[1].noteCount == 5);
+    CHECK (bars[1].numerator == 3);
+    CHECK (m.size() == 7);
+}

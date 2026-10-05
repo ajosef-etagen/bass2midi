@@ -24,7 +24,8 @@ namespace bass2midi
         noteMachine.reset();
 
         settings.attacks.gateDbfs = settings.notes.gateOpenDbfs;
-        if (! attackDetector.prepare (sampleRateHz, settings.attacks) || ! follower.setSettings (settings.follower))
+        if (! attackDetector.prepare (sampleRateHz, settings.attacks) || ! follower.setSettings (settings.follower)
+            || ! barPlayer.setSettings (settings.bars))
             return false;
 
         validationFramesNeeded = settings.validationFrames;
@@ -60,8 +61,25 @@ namespace bass2midi
 
     void BassToMidiProcessor::setTimeline (const ExpectedNote* notes, int count) noexcept
     {
+        setTimeline (notes, count, nullptr, 0);
+    }
+
+    void BassToMidiProcessor::setTimeline (const ExpectedNote* notes, int count, const TimelineBar* bars, int barCount) noexcept
+    {
         follower.setTimeline (notes, count);
+        barPlayer.setTimeline (notes, count, bars, barCount);
+        timelineBarCount = bars != nullptr && notes != nullptr && count > 0 ? barCount : 0;
+        pendingBarStart = 0;
         validating = false;
+    }
+
+    void BassToMidiProcessor::emitBar (const BarPlayer::Output& o, std::int64_t sample, Output& out) noexcept
+    {
+        for (int i = 0; i < o.count && out.count < maxEventsPerBlock; ++i)
+        {
+            const auto& e = o.events[static_cast<std::size_t> (i)];
+            out.events[static_cast<std::size_t> (out.count++)] = { e, sample, e.type == NoteEvent::Type::noteOn, false };
+        }
     }
 
     void BassToMidiProcessor::setSongPosition (int index) noexcept
@@ -85,7 +103,16 @@ namespace bass2midi
 
     void BassToMidiProcessor::allNotesOff (Output& out) noexcept
     {
-        emit (noteMachine.allNotesOff(), samplePosition, false, false, out);
+        const auto off = noteMachine.allNotesOff();
+        if (! noteMachineSilent)
+            emit (off, samplePosition, false, false, out);
+        noteMachineSilent = false;
+        BarPlayer::Output bo;
+        if (barActive())
+            barPlayer.start (barPlayer.getBar(), bo); // end the note, wait for the next downbeat
+        else
+            barPlayer.stop (bo);
+        emitBar (bo, samplePosition, out);
         validating = false;
     }
 
@@ -94,6 +121,44 @@ namespace bass2midi
         if (sampleRateHz <= 0.0 || numSamples <= 0)
             return;
         const std::int64_t blockEnd = samplePosition + numSamples;
+
+        // Mode changes and bar-playback (re)starts. The bar player owns its notes; leaving bar mode
+        // ends them.
+        if (mode != appliedMode)
+        {
+            if (appliedMode == Mode::bar)
+            {
+                BarPlayer::Output bo;
+                barPlayer.stop (bo);
+                emitBar (bo, blockEnd, out);
+            }
+            if (mode == Mode::bar && pendingBarStart < 0)
+                pendingBarStart = std::max (0, barPlayer.getBar());
+            appliedMode = mode;
+            validating = false;
+        }
+        barPlayer.setOutput (settings.notes.midiChannel, settings.notes.transposeSemitones);
+        attackDetector.setUsePeriodicity (settings.attacks.usePeriodicity || (barActive() && settings.barModePeriodicity));
+        if (barActive() && pendingBarStart >= 0)
+        {
+            BarPlayer::Output bo;
+            barPlayer.start (pendingBarStart, bo);
+            emitBar (bo, blockEnd, out);
+            pendingBarStart = -1;
+        }
+        // Bar playback output starts (anchor or resumed trust): end a Free-mode note that was sent;
+        // from then on the Free path runs silently (its notes are the player's, used for the
+        // periodicity period) until Free output takes over again.
+        const auto endFreeNoteForBar = [&]
+        {
+            if (barActive() && barPlayer.isOutputting() && ! noteMachineSilent)
+            {
+                if (noteMachine.getSoundingNote() >= 0)
+                    emit (noteMachine.allNotesOff(), blockEnd, false, false, out);
+                noteMachineSilent = true;
+            }
+        };
+        endFreeNoteForBar();
 
         // 1. Attacks (all modes, for diagnostics; Song Mode acts on them at once).
         AttackDetector::Attack attack;
@@ -107,6 +172,24 @@ namespace bass2midi
                                       <= static_cast<std::int64_t> (settings.ghostReferenceSeconds * sampleRateHz);
             const bool ghost = recentReference
                             && attack.peakLinear < acceptedAttackPeak * std::pow (10.0, -settings.ghostRelativeDb / 20.0);
+            if (barActive())
+            {
+                BarPlayer::Output bo;
+                if (barPlayer.onAttack (seconds (attack.detectedAtSample), attack.velocity, bo))
+                {
+                    endFreeNoteForBar();
+                    if (barPlayer.isOutputting())
+                        diagnostics.lastTriggerLatencySamples = blockEnd - attack.detectedAtSample;
+                    validating = true; // verdict on the anchor pitch
+                    validationAttackSample = attack.detectedAtSample;
+                    validationIndex = barAnchorVerdict;
+                    validationCandidate = -1;
+                    validationRun = 0;
+                    validationPredicted = false;
+                    validationVoiced = false;
+                }
+                emitBar (bo, blockEnd, out);
+            }
             if (songActive() && ghost)
                 ++diagnostics.ghostAttacks;
             if (songActive() && ! ghost)
@@ -136,6 +219,13 @@ namespace bass2midi
             }
         }
 
+        if (barActive())
+        {
+            BarPlayer::Output bo;
+            barPlayer.advance (seconds (blockEnd), bo);
+            emitBar (bo, blockEnd, out);
+        }
+
         // 2. Pitch path.
         framer.push (samples, numSamples, [&] (const float* frame, std::int64_t frameEnd, int)
         {
@@ -154,6 +244,20 @@ namespace bass2midi
         diagnostics.mismatches = follower.getMismatches();
         diagnostics.resyncs = follower.getResyncs();
         diagnostics.extraAttacks = follower.getExtraAttacks();
+        diagnostics.barActive = barActive();
+        diagnostics.barOutputting = barActive() && barPlayer.isOutputting();
+        diagnostics.barTrusted = barPlayer.isTrusted();
+        diagnostics.barState = static_cast<int> (barPlayer.getState());
+        diagnostics.barPlayed = barPlayer.getBar();
+        diagnostics.barWritten = barPlayer.getWrittenBar();
+        diagnostics.barCount = timelineBarCount;
+        diagnostics.barTempoRatio = barPlayer.getTempoRatio();
+        diagnostics.nextAnchorSeconds = barPlayer.getNextAnchorSeconds();
+        diagnostics.barsStarted = barPlayer.getBarsStarted();
+        diagnostics.barStops = barPlayer.getStops();
+        diagnostics.rootMatches = barPlayer.getRootMatches();
+        diagnostics.rootMismatches = barPlayer.getRootMismatches();
+        diagnostics.barFallbacks = barPlayer.getFallbacks();
     }
 
     void BassToMidiProcessor::handleFrame (const float* frame, std::int64_t frameEnd, std::int64_t blockEnd, Output& out) noexcept
@@ -173,26 +277,44 @@ namespace bass2midi
 
         const int correctionsBefore = noteMachine.getPredictionCorrections();
         const int soundingBefore = noteMachine.getSoundingNote();
-        FrameFeatures features { pitch, static_cast<double> (hopPeak) };
-        // While a prediction is pending, a window that still holds mostly the previous note would
-        // "correct" the new note back to the old one: such frames carry no pitch for the state machine.
-        if (noteMachine.isPredictionPending() && frameEnd - acceptedAttackSample < (3 * estimate.windowSamples) / 4)
-            features.pitch.valid = false;
-        const auto o = noteMachine.processFrame (features);
-        const bool correction = noteMachine.getPredictionCorrections() != correctionsBefore;
-        emit (o, blockEnd, false, correction, out);
-
-        if (settings.attacks.usePeriodicity)
+        bool correction = false;
+        const bool barOutputs = barActive() && barPlayer.isOutputting();
+        if (barOutputs && ! noteMachineSilent)
         {
-            const int sounding = noteMachine.getSoundingNote();
-            attackDetector.setPeriodSamples (sounding >= 0 ? sampleRateHz / midi::frequencyHzFromNote (sounding) : 0.0);
+            if (noteMachine.getSoundingNote() >= 0) // trust regained mid-block: end the sent Free note
+                emit (noteMachine.allNotesOff(), blockEnd, false, false, out);
+            noteMachineSilent = true;
+        }
+        if (! barOutputs && noteMachineSilent)
+        {
+            noteMachine.allNotesOff(); // its silent notes were never sent: start Free output clean
+            noteMachineSilent = false;
+        }
+        {
+            FrameFeatures features { pitch, static_cast<double> (hopPeak) };
+            // While a prediction is pending, a window that still holds mostly the previous note would
+            // "correct" the new note back to the old one: such frames carry no pitch for the state machine.
+            if (noteMachine.isPredictionPending() && frameEnd - acceptedAttackSample < (3 * estimate.windowSamples) / 4)
+                features.pitch.valid = false;
+            const auto o = noteMachine.processFrame (features);
+            correction = noteMachine.getPredictionCorrections() != correctionsBefore;
+            if (! noteMachineSilent)
+                emit (o, blockEnd, false, correction, out);
         }
 
-        if (! songActive())
+        if (settings.attacks.usePeriodicity || (barActive() && settings.barModePeriodicity))
+        {
+            // Period of what the player's string sounds: the Free-path note (it also runs silently
+            // during bar playback).
+            const int sounding = noteMachine.getSoundingNote();
+            attackDetector.setPeriodSamples (sounding > 0 ? sampleRateHz / midi::frequencyHzFromNote (sounding) : 0.0);
+        }
+
+        if (! songActive() && ! barActive())
             return;
 
         // A note the pitch path started on its own (no attack being validated): tell the follower.
-        if (! validating && ! correction && noteMachine.getSoundingNote() >= 0 && noteMachine.getSoundingNote() != soundingBefore)
+        if (songActive() && ! validating && ! correction && noteMachine.getSoundingNote() >= 0 && noteMachine.getSoundingNote() != soundingBefore)
             follower.onPlayedNote (noteMachine.getSoundingNote(), seconds (frameEnd - estimate.windowSamples), -1);
 
         if (! validating)
@@ -208,7 +330,7 @@ namespace bass2midi
             return;
         if (pitch.valid && pitch.clarity >= settings.unpitchedClarity)
             validationVoiced = true;
-        if (! validationVoiced && frameEnd - validationAttackSample >= unpitchedDecisionSamples)
+        if (songActive() && ! validationVoiced && frameEnd - validationAttackSample >= unpitchedDecisionSamples)
         {
             // No pitch at all after the attack: a dead-note click, not the expected note.
             if (validationPredicted)
@@ -236,6 +358,13 @@ namespace bass2midi
         {
             validationCandidate = note;
             validationRun = 1;
+        }
+        if (validationRun >= validationFramesNeeded && validationIndex == barAnchorVerdict)
+        {
+            barPlayer.onAnchorPitch (note);
+            diagnostics.lastValidatedNote = note;
+            validating = false;
+            return;
         }
         if (validationRun >= validationFramesNeeded)
         {

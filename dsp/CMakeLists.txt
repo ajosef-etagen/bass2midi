@@ -3,6 +3,7 @@ add_library(bass2midi_dsp STATIC
     src/AnalysisFramer.cpp
     src/BassToMidiProcessor.cpp
     src/AttackDetector.cpp
+    src/BarPlayer.cpp
     src/SongFollower.cpp
     src/MultiResolutionPitchTracker.cpp
     src/NoteStateMachine.cpp
