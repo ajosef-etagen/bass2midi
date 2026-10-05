@@ -217,7 +217,7 @@ namespace bass2midi::song::detail
                                 const auto* note = noteIt->second;
                                 const auto* properties = note->child ("Properties");
 
-                                int pitch = -1;
+                                int pitch = -1, writtenString = -1, writtenFret = -1;
                                 const auto* stringProperty = findProperty (properties, "String");
                                 const auto* fretProperty = findProperty (properties, "Fret");
                                 if (stringProperty != nullptr && fretProperty != nullptr)
@@ -225,7 +225,11 @@ namespace bass2midi::song::detail
                                     const int stringIndex = std::atoi (stringProperty->childText ("String").c_str());
                                     const int fret = std::atoi (fretProperty->childText ("Fret").c_str());
                                     if (stringIndex >= 0 && stringIndex < static_cast<int> (track.tuning.size()))
+                                    {
                                         pitch = track.tuning[static_cast<std::size_t> (stringIndex)] + fret;
+                                        writtenString = stringIndex; // GPIF numbers strings from the lowest
+                                        writtenFret = fret;
+                                    }
                                 }
                                 if (pitch < 0)
                                     if (const auto* midi = findProperty (properties, "Midi"))
@@ -238,6 +242,8 @@ namespace bass2midi::song::detail
                                 out.startQuarters = position;
                                 out.durationQuarters = grace ? 0.0 : duration;
                                 out.bar = barIndex;
+                                out.string = writtenString;
+                                out.fret = writtenFret;
                                 if (const auto* tie = note->child ("Tie"))
                                     out.tieContinuation = tie->attribute ("destination") == "true";
                                 track.notes.push_back (out);

@@ -18,6 +18,8 @@ namespace bass2midi::song
         double durationQuarters = 0.0;
         int bar = 0;                    // 0-based master bar index
         bool tieContinuation = false;   // continues a tied note: no new attack
+        int string = -1;                // as written in the file: 0 = lowest string of the track's tuning; -1 unknown
+        int fret = -1;                  // -1 unknown
     };
 
     struct Track
@@ -80,6 +82,15 @@ namespace bass2midi::song
     // reduced to the lowest note, grace notes (no metric time) dropped.
     std::vector<ExpectedNote> expectedNotes (const Song& song, int track);
 
+    // Tablature (string/fret for 4-string EADG) and anchor weights are filled in: the file's own
+    // string/fret where the track is tuned EADG, else a fingering with few position changes
+    // (see assignFingering).
+
     // Same notes plus the bars in playing order they belong to (every played bar, also empty ones).
     std::vector<ExpectedNote> expectedNotes (const Song& song, int track, std::vector<TimelineBar>& bars);
+
+    // Chooses string/fret on a 4-string EADG bass for every note with string < 0, minimising position
+    // changes (open strings are free) with a mild preference for low positions (Viterbi over the
+    // whole part). Notes outside E1..fret maxFret on G keep string = fret = -1.
+    void assignFingering (std::vector<ExpectedNote>& notes, int maxFret = 20);
 }

@@ -278,3 +278,63 @@ TEST_CASE ("Song timeline: bars in playing order carry their notes")
     CHECK (bars[1].numerator == 3);
     CHECK (m.size() == 7);
 }
+
+TEST_CASE ("Tablature: the file's string/fret is kept; otherwise few position changes")
+{
+    song::Song s;
+    std::string error;
+    REQUIRE (song::loadSongFile (dataPath ("repeats.gp"), s, error));
+    const auto notes = song::expectedNotes (s, 0);
+    REQUIRE (notes.size() == 7);
+    const std::vector<int> frets { 0, 1, 2, 0, 1, 3, 4 }; // written on the E string
+    for (std::size_t i = 0; i < notes.size(); ++i)
+    {
+        CHECK (notes[i].string == 0);
+        CHECK (notes[i].fret == frets[i]);
+        CHECK (notes[i].anchorWeight == doctest::Approx (1.0)); // whole notes on the downbeat
+    }
+
+    REQUIRE (song::loadSongFile (dataPath ("synthetic_5.10.gp5"), s, error));
+    for (const auto& n : song::expectedNotes (s, 0))
+    {
+        REQUIRE (n.string >= 0);
+        CHECK (n.midiNote == std::vector<int> { 28, 33, 38, 43 }[static_cast<std::size_t> (n.string)] + n.fret);
+    }
+
+    // Computed fingering: a riff around the 5th fret stays there instead of jumping to open strings
+    // and back; unplayable notes are marked.
+    std::vector<ExpectedNote> riff;
+    for (const int m : { 33, 36, 38, 40, 41, 43, 45, 20 })
+    {
+        ExpectedNote n;
+        n.midiNote = m;
+        riff.push_back (n);
+    }
+    song::assignFingering (riff);
+    for (std::size_t i = 0; i + 1 < riff.size(); ++i)
+    {
+        CAPTURE (i);
+        REQUIRE (riff[i].string >= 0);
+        CHECK (riff[i].midiNote == std::vector<int> { 28, 33, 38, 43 }[static_cast<std::size_t> (riff[i].string)] + riff[i].fret);
+        if (i > 0 && riff[i].fret > 0 && riff[i - 1].fret > 0)
+            CHECK (std::abs (riff[i].fret - riff[i - 1].fret) <= 4);
+    }
+    CHECK (riff.back().string == -1); // below E1
+}
+
+TEST_CASE ("Anchor weights: downbeats and long notes count most, short off-beat notes least")
+{
+    song::Song s;
+    std::string error;
+    REQUIRE (song::loadSongFile (dataPath ("minimal.gp"), s, error));
+    const auto notes = song::expectedNotes (s, 1);
+    // E1 dotted quarter on 1; B1 eighth on 2.5 (tied, longer); D2 triplet eighth on bar 2's downbeat; E2 triplet off-beat.
+    CHECK (notes[0].anchorWeight > 0.95);
+    CHECK (notes[2].anchorWeight > notes[3].anchorWeight);
+    CHECK (notes[3].anchorWeight < 0.3);
+    for (const auto& n : notes)
+    {
+        CHECK (n.anchorWeight >= 0.1);
+        CHECK (n.anchorWeight <= 1.0);
+    }
+}

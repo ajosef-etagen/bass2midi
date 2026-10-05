@@ -13,6 +13,10 @@ namespace bass2midi
         int bar = 0;                   // written (score) bar index, 0-based, for display
         double beat = 1.0;             // 1-based beat within the bar, in units of the time-signature denominator
         int playedBar = 0;             // index of its bar in playing order (see TimelineBar)
+        int string = -1;               // tablature for 4-string EADG: 0 = E, 1 = A, 2 = D, 3 = G; -1 not playable
+        int fret = -1;
+        double anchorWeight = 0.5;     // 0..1: how much this note says about the song position (downbeats,
+                                       // strong beats, long notes, the bar's root: high; fills, passing notes: low)
     };
 
     // One bar in playing order (repeats unrolled), for bar-wise following and bar playback. Times at

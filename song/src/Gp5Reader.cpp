@@ -451,6 +451,8 @@ namespace bass2midi::song::detail
                             note.durationQuarters = quarters;
                             note.bar = m;
                             note.tieContinuation = tie;
+                            note.string = info.stringCount - stringNumber; // GP5 numbers strings from the highest
+                            note.fret = pitch - info.tuning[stringIndex];
                             track.notes.push_back (note);
                         }
 

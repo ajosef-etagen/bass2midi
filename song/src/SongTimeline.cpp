@@ -1,6 +1,7 @@
 #include "bass2midi/song/Song.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 namespace bass2midi::song
@@ -75,6 +76,94 @@ namespace bass2midi::song
         };
     }
 
+    void assignFingering (std::vector<ExpectedNote>& notes, int maxFret)
+    {
+        static constexpr int tuning[4] = { 28, 33, 38, 43 };
+        const auto candidates = [&] (const ExpectedNote& n, int* strings, int* frets)
+        {
+            if (n.string >= 0 && n.fret >= 0) // given (from the file): the only option
+            {
+                strings[0] = n.string;
+                frets[0] = n.fret;
+                return 1;
+            }
+            int c = 0;
+            for (int s = 0; s < 4; ++s)
+            {
+                const int f = n.midiNote - tuning[s];
+                if (f >= 0 && f <= maxFret)
+                {
+                    strings[c] = s;
+                    frets[c] = f;
+                    ++c;
+                }
+            }
+            return c;
+        };
+        const auto unary = [] (int fret) { return 0.02 * fret + (fret > 12 ? 0.1 * (fret - 12) : 0.0); };
+        const auto transition = [] (int s0, int f0, int s1, int f1)
+        {
+            if (f0 == 0 || f1 == 0)
+                return 0.1 * std::abs (s1 - s0); // open strings need no position
+            return static_cast<double> (std::abs (f1 - f0)) + 0.3 * std::abs (s1 - s0);
+        };
+
+        // Viterbi over runs of playable notes (an unplayable note breaks the chain).
+        const std::size_t n = notes.size();
+        std::vector<std::array<double, 4>> cost (n);
+        std::vector<std::array<int, 4>> back (n);
+        std::vector<std::array<int, 4>> strs (n), frs (n);
+        std::vector<int> counts (n);
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            counts[i] = candidates (notes[i], strs[i].data(), frs[i].data());
+            for (int c = 0; c < counts[i]; ++c)
+            {
+                cost[i][static_cast<std::size_t> (c)] = unary (frs[i][static_cast<std::size_t> (c)]);
+                back[i][static_cast<std::size_t> (c)] = -1;
+                if (i > 0 && counts[i - 1] > 0)
+                {
+                    double best = 1.0e18;
+                    for (int p = 0; p < counts[i - 1]; ++p)
+                    {
+                        const double v = cost[i - 1][static_cast<std::size_t> (p)]
+                                       + transition (strs[i - 1][static_cast<std::size_t> (p)], frs[i - 1][static_cast<std::size_t> (p)],
+                                                     strs[i][static_cast<std::size_t> (c)], frs[i][static_cast<std::size_t> (c)]);
+                        if (v < best)
+                        {
+                            best = v;
+                            back[i][static_cast<std::size_t> (c)] = p;
+                        }
+                    }
+                    cost[i][static_cast<std::size_t> (c)] += best;
+                }
+            }
+        }
+        // Backtrack each run from its end.
+        for (std::size_t end = n; end-- > 0;)
+        {
+            if (counts[end] == 0)
+            {
+                notes[end].string = notes[end].fret = -1;
+                continue;
+            }
+            if (end + 1 < n && counts[end + 1] > 0)
+                continue; // not the end of a run
+            int c = 0;
+            for (int k = 1; k < counts[end]; ++k)
+                if (cost[end][static_cast<std::size_t> (k)] < cost[end][static_cast<std::size_t> (c)])
+                    c = k;
+            for (std::size_t i = end + 1; i-- > 0 && c >= 0;)
+            {
+                notes[i].string = strs[i][static_cast<std::size_t> (c)];
+                notes[i].fret = frs[i][static_cast<std::size_t> (c)];
+                c = back[i][static_cast<std::size_t> (c)];
+                if (i == 0 || counts[i - 1] == 0)
+                    break;
+            }
+        }
+    }
+
     std::vector<ExpectedNote> expectedNotes (const Song& song, int trackIndex)
     {
         std::vector<TimelineBar> bars;
@@ -89,6 +178,7 @@ namespace bass2midi::song
             return out;
         const auto& track = song.tracks[static_cast<std::size_t> (trackIndex)];
         const TempoMap tempo { song.tempos };
+        const bool standardTuning = track.tuning == std::vector<int> { 28, 33, 38, 43 };
 
         // Notes grouped by written bar (they are sorted by start).
         std::vector<std::vector<const Note*>> byBar (song.masterBars.size());
@@ -129,6 +219,31 @@ namespace bass2midi::song
 
                 ExpectedNote expected;
                 expected.midiNote = note->midiNote;
+                if (standardTuning && note->string >= 0 && note->fret >= 0)
+                {
+                    expected.string = note->string;
+                    expected.fret = note->fret;
+                }
+                {
+                    // Anchor weight from metric position and length (beats in units of the denominator).
+                    const double beat0 = offsetQuarters * bar.denominator / 4.0; // 0-based
+                    const double lengthBeats = note->durationQuarters * bar.denominator / 4.0;
+                    const auto near = [] (double v) { return std::abs (v - std::round (v)) < 1.0e-6; };
+                    double w = 0.2;
+                    if (std::abs (beat0) < 1.0e-6)
+                        w = 1.0;
+                    else if (bar.numerator == 4 && std::abs (beat0 - 2.0) < 1.0e-6)
+                        w = 0.7;
+                    else if (near (beat0))
+                        w = 0.5;
+                    else if (near (beat0 * 2.0))
+                        w = 0.3;
+                    if (lengthBeats >= 1.0 - 1.0e-6)
+                        w += 0.15;
+                    else if (lengthBeats < 0.5 - 1.0e-6)
+                        w -= 0.1;
+                    expected.anchorWeight = std::clamp (w, 0.1, 1.0);
+                }
                 expected.startSeconds = start;
                 expected.durationSeconds = duration;
                 expected.bar = barIndex;
@@ -157,6 +272,14 @@ namespace bass2midi::song
         for (auto& b : bars)
             if (b.noteCount == 0)
                 b.firstNote = 0;
+
+        // The bar's root (heuristic: the pitch class of its first note) recurring later in the bar.
+        for (const auto& b : bars)
+            for (int i = b.firstNote + 1; i < b.firstNote + b.noteCount; ++i)
+                if ((out[static_cast<std::size_t> (i)].midiNote - out[static_cast<std::size_t> (b.firstNote)].midiNote) % 12 == 0)
+                    out[static_cast<std::size_t> (i)].anchorWeight = std::min (1.0, out[static_cast<std::size_t> (i)].anchorWeight + 0.1);
+
+        assignFingering (out);
         return out;
     }
 }
