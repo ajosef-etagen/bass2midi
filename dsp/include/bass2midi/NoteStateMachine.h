@@ -55,6 +55,13 @@ namespace bass2midi
     //     octave error). This is a bounded delay, never a rejection: consistent acoustic evidence for
     //     that long always overrides the palette. Palette notes are decided exactly as in Free mode.
     //
+    //  6. Song Mode (triggerPredicted): an external attack detector plus the song follower may start
+    //     a note immediately, before the pitch path has decided. The usual pairing guarantees hold
+    //     (Note Off of a sounding note first). For predictionWindowMs afterwards the pitch path can
+    //     only replace the predicted note after predictionCorrectionMs of consistent clear frames
+    //     (a correction: Note Off + Note On of the detected note), and this machine's own onset
+    //     detection ignores the same pluck for onsetSuppressMs (no duplicate Note On).
+    //
     // Real-time: no allocation, no locks; processFrame is O(onset lookback) per frame.
     class NoteStateMachine
     {
@@ -92,6 +99,9 @@ namespace bass2midi
             int minVelocity = 20;                 // 1..127
             double offPaletteConfirmMs = 10.0;    // extra confirmation for a note outside a non-empty song palette
             double offPaletteOctaveConfirmMs = 20.0; // further extra when it is an octave from a palette note
+            double predictionWindowMs = 150.0;    // after a predicted Note On: corrections follow the rule below
+            double predictionCorrectionMs = 20.0; // consistent clear frames of another note to correct a prediction
+            double onsetSuppressMs = 60.0;        // own onset detection ignored after a predicted Note On
 
             bool isValid() const noexcept;
         };
@@ -120,6 +130,15 @@ namespace bass2midi
 
         Output processFrame (const FrameFeatures& frame) noexcept;
 
+        // Song Mode: start `playedNote` now (velocity 1..127), ending a sounding note first. `playedNote`
+        // is in played-note space (transposition is applied as usual). Returns no events for notes
+        // outside the range. Real-time safe.
+        Output triggerPredicted (int playedNote, int velocity) noexcept;
+
+        // Song Mode: ends the predicted note if its prediction window is still open (the attack had no
+        // pitch, e.g. a dead-note click). Real-time safe.
+        Output cancelPrediction() noexcept;
+
         // Ends the sounding note (if any) and resets. Call on stop, device change, or panic.
         Output allNotesOff() noexcept;
 
@@ -132,6 +151,8 @@ namespace bass2midi
         // Decisions the palette postponed: a candidate reached the Free-mode frame count but was off-palette.
         // Counts since construction (not cleared by reset).
         int getPaletteDelayedDecisions() const noexcept { return paletteDelayedDecisions; }
+        bool isPredictionPending() const noexcept { return predictionFramesLeft > 0; }
+        int getPredictionCorrections() const noexcept { return predictionCorrections; } // since construction
 
         // Pure helpers, exposed for tests.
         static int velocityFromPeak (double peakLinear, const Settings& s) noexcept;
@@ -143,6 +164,7 @@ namespace bass2midi
         int framesFor (double ms) const noexcept;
         void addNoteOff (Output& out) noexcept;
         void addNoteOn (Output& out, int note) noexcept;
+        void addNoteOn (Output& out, int note, int velocity) noexcept;
         int palettePenaltyFrames (int note) const noexcept;
         bool decide (int candidateCount, int freeRequired, int note) noexcept;
 
@@ -152,6 +174,8 @@ namespace bass2midi
         int releaseHoldFrames = 12, unvoicedReleaseFrames = 80, changeFrames = 4, octaveFrames = 16;
         int lookbackFrames = 8, holdFrames = 10, onsetValidFrames = 48, settleFrames = 16;
         int offPaletteFrames = 4, offPaletteOctaveFrames = 12;
+        int predictionFrames = 60, correctionFrames = 8, onsetSuppressFrames = 24;
+        int predictionFramesLeft = 0, onsetSuppressFramesLeft = 0, predictionCorrections = 0;
         NotePalette palette;
         int paletteDelayedDecisions = 0;
 

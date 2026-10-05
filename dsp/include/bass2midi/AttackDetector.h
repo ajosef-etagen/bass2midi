@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
@@ -79,6 +80,9 @@ namespace bass2midi
         // Real-time safe. Period of the currently sounding note in samples (from the pitch path, or
         // the expected note in Song Mode); 0 disables the periodicity function.
         void setPeriodSamples (double periodSamples) noexcept;
+
+        // Real-time safe. Follows the note gate of the state machine.
+        void setGateDbfs (double gateDbfs) noexcept { if (std::isfinite (gateDbfs) && gateDbfs <= 0.0) settings.gateDbfs = gateDbfs; }
 
         // Non-real-time (computes coefficients, allocates the history). Returns false for invalid
         // settings / sample rate.

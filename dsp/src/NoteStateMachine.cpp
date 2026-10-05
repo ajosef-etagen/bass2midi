@@ -40,7 +40,8 @@ namespace bass2midi
             && velocityCeilDbfs > velocityFloorDbfs
             && minVelocity >= 1 && minVelocity <= 127
             && nonNegative (offPaletteConfirmMs) && offPaletteConfirmMs <= 200.0
-            && nonNegative (offPaletteOctaveConfirmMs) && offPaletteOctaveConfirmMs <= 200.0;
+            && nonNegative (offPaletteOctaveConfirmMs) && offPaletteOctaveConfirmMs <= 200.0
+            && nonNegative (predictionWindowMs) && nonNegative (predictionCorrectionMs) && nonNegative (onsetSuppressMs);
     }
 
     int NoteStateMachine::framesFor (double ms) const noexcept
@@ -64,6 +65,9 @@ namespace bass2midi
         settleFrames = framesFor (settings.onsetSettleMs);
         offPaletteFrames = settings.offPaletteConfirmMs > 0.0 ? framesFor (settings.offPaletteConfirmMs) : 0;
         offPaletteOctaveFrames = settings.offPaletteOctaveConfirmMs > 0.0 ? framesFor (settings.offPaletteOctaveConfirmMs) : 0;
+        predictionFrames = framesFor (settings.predictionWindowMs);
+        correctionFrames = std::max (settings.attackFrames, framesFor (settings.predictionCorrectionMs));
+        onsetSuppressFrames = framesFor (settings.onsetSuppressMs);
         return true;
     }
 
@@ -82,6 +86,8 @@ namespace bass2midi
         ringWritePos = 0;
         ringCount = 0;
         noteRmsPeakLinear = 0.0;
+        predictionFramesLeft = 0;
+        onsetSuppressFramesLeft = 0;
     }
 
     double NoteStateMachine::toDbfs (double linear) noexcept
@@ -126,7 +132,13 @@ namespace bass2midi
 
     void NoteStateMachine::addNoteOn (Output& out, int note) noexcept
     {
-        lastVelocity = velocityFromPeak (attackPeakLinear, settings);
+        addNoteOn (out, note, velocityFromPeak (attackPeakLinear, settings));
+        predictionFramesLeft = 0; // a decision of the pitch path ends any prediction window
+    }
+
+    void NoteStateMachine::addNoteOn (Output& out, int note, int velocity) noexcept
+    {
+        lastVelocity = std::clamp (velocity, 1, 127);
         soundingNote = note;
         soundingOutputNote = note + settings.transposeSemitones;
         soundingChannel = settings.midiChannel;
@@ -166,7 +178,12 @@ namespace bass2midi
         ringCount = std::min (ringCount + 1, maxLookbackFrames);
 
         ++framesSinceOnset;
-        const bool onset = levelDb >= settings.gateOpenDbfs
+        if (predictionFramesLeft > 0)
+            --predictionFramesLeft;
+        const bool suppressOnset = onsetSuppressFramesLeft > 0;
+        if (suppressOnset)
+            --onsetSuppressFramesLeft;
+        const bool onset = ! suppressOnset && levelDb >= settings.gateOpenDbfs
                         && levelDb - recentMinDb >= settings.onsetRiseDb
                         && framesSinceOnset > lookbackFrames;
         if (onset)
@@ -267,6 +284,24 @@ namespace bass2midi
             return out;
         }
 
+        if (predictionFramesLeft > 0)
+        {
+            // A predicted note: only consistent, clear evidence of another note corrects it.
+            if (frame.pitch.clarity < settings.changeMinClarity)
+            {
+                candidateFrames = 0;
+                return out;
+            }
+            if (candidateFrames >= correctionFrames)
+            {
+                addNoteOff (out);
+                addNoteOn (out, note);
+                noteRmsPeakLinear = frame.pitch.windowRmsLinear;
+                ++predictionCorrections;
+            }
+            return out;
+        }
+
         if (onsetFramesLeft <= 0
             && (frame.pitch.clarity < settings.changeMinClarity
                 || toDbfs (frame.pitch.windowRmsLinear) < toDbfs (noteRmsPeakLinear) - settings.changeMaxDropDb))
@@ -286,6 +321,34 @@ namespace bass2midi
             noteRmsPeakLinear = frame.pitch.windowRmsLinear;
         }
 
+        return out;
+    }
+
+    NoteStateMachine::Output NoteStateMachine::triggerPredicted (int playedNote, int velocity) noexcept
+    {
+        Output out;
+        const int outputNote = playedNote + settings.transposeSemitones;
+        if (playedNote < settings.lowestNote || playedNote > settings.highestNote || outputNote < 0 || outputNote > 127)
+            return out;
+
+        if (soundingNote >= 0)
+            addNoteOff (out);
+        addNoteOn (out, playedNote, velocity);
+        noteRmsPeakLinear = 0.0; // measured from the next frames
+        predictionFramesLeft = predictionFrames;
+        onsetSuppressFramesLeft = onsetSuppressFrames;
+        attackPeakLinear = 0.0;
+        return out;
+    }
+
+    NoteStateMachine::Output NoteStateMachine::cancelPrediction() noexcept
+    {
+        Output out;
+        if (predictionFramesLeft > 0 && soundingNote >= 0)
+            addNoteOff (out);
+        predictionFramesLeft = 0;
+        candidateNote = -1;
+        candidateFrames = 0;
         return out;
     }
 

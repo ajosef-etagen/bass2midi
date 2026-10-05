@@ -1,7 +1,9 @@
 # Real-time DSP core: plain C++20, no JUCE, no allocation after prepare().
 add_library(bass2midi_dsp STATIC
     src/AnalysisFramer.cpp
+    src/BassToMidiProcessor.cpp
     src/AttackDetector.cpp
+    src/SongFollower.cpp
     src/MultiResolutionPitchTracker.cpp
     src/NoteStateMachine.cpp
     src/Fft.cpp
