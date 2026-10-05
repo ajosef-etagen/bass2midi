@@ -12,8 +12,10 @@ namespace bass2midi
         return unit (initialConfidence) && unit (minPredictConfidence)
             && std::isfinite (confidenceRate) && confidenceRate > 0.0 && confidenceRate < 1.0
             && maxSkip >= 0 && maxSkip <= 16
+            && std::isfinite (skipMargin) && skipMargin >= -0.5 && skipMargin <= 4.0
             && unit (earlyAttackFraction)
             && std::isfinite (pauseSeconds) && pauseSeconds >= 0.0
+            && std::isfinite (earlyMatchToleranceSeconds) && earlyMatchToleranceSeconds >= 0.0 && unit (earlyMatchToleranceFraction)
             && std::isfinite (minTempoRatio) && minTempoRatio > 0.0 && maxTempoRatio >= minTempoRatio && std::isfinite (maxTempoRatio)
             && unit (tempoAdapt)
             && std::isfinite (minTempoSpanSeconds) && minTempoSpanSeconds >= 0.0
@@ -72,16 +74,15 @@ namespace bass2midi
         if (elapsedScore > distance (last) + settings.pauseSeconds)
             return position; // a pause the score does not have: resume with the next note
 
+        // Move past note k only if the attack comes clearly after the following note's time:
+        // players phrase rhythms differently far more often than the attack detector misses a pluck.
         int best = position;
-        double bestCost = std::abs (elapsedScore - next);
-        for (int k = position + 1; k <= last; ++k)
+        while (best < last)
         {
-            const double cost = std::abs (elapsedScore - distance (k));
-            if (cost < bestCost)
-            {
-                best = k;
-                bestCost = cost;
-            }
+            const double here = distance (best), following = distance (best + 1);
+            if (elapsedScore < following + settings.skipMargin * (following - here))
+                break;
+            ++best;
         }
         return best;
     }
@@ -194,8 +195,19 @@ namespace bass2midi
             // A note without an assigned attack (the attack detector missed it): place it by timing.
             bool extra = false;
             index = chooseIndex (attackTimeSeconds, extra);
-            if (extra && position < count && notes[position].midiNote == midiNote)
-                index = position, extra = false; // early, but exactly the next note
+            if (extra && position < count && notes[position].midiNote == midiNote && refIndex >= 0)
+            {
+                // Slightly early, but exactly the next note. Only close to its expected time: on a
+                // long written note players often re-pluck the same pitch in rhythm, and taking such
+                // a re-pluck as the next written note moved the position seconds ahead (live take).
+                const double elapsedScore = (attackTimeSeconds - refTime) * tempoRatio;
+                const double next = notes[position].startSeconds - notes[refIndex].startSeconds;
+                if (elapsedScore >= next - std::max (settings.earlyMatchToleranceSeconds, settings.earlyMatchToleranceFraction * next))
+                {
+                    index = position;
+                    extra = false;
+                }
+            }
             if (extra || index < 0)
                 return; // a note the score does not have here (fill): says nothing about the position
             markAttack (index, attackTimeSeconds);

@@ -1,7 +1,7 @@
 // Song Mode evaluation: does an attack-triggered expected note beat full pitch detection, and what
 // does it cost when the player deviates from the score?
 //
-//   bass2midi_songmode_eval [--out <dir>] [--song <file.gp|gp5> [--seconds N]] [--rate Hz]
+//   bass2midi_songmode_eval [--out <dir>] [--song <file.gp|gp5> [--seconds N]] [--rate Hz] [--skip-margin X]
 //
 // Renders synthetic bass performances of a timeline (built-in riffs, or a Guitar Pro bass track),
 // runs the same BassToMidiProcessor as the app in Free and in Song mode on the same signal, and
@@ -32,6 +32,8 @@ using namespace bass2midi;
 
 namespace
 {
+    double skipMarginSetting = SongFollower::Settings {}.skipMargin; // --skip-margin
+
     struct Riff
     {
         std::string name;
@@ -189,6 +191,7 @@ namespace
         BassToMidiProcessor processor;
         BassToMidiProcessor::Settings settings;
         settings.attacks.usePeriodicity = periodicity;
+        settings.follower.skipMargin = skipMarginSetting;
         if (! processor.prepare (rate, settings))
         {
             std::cerr << "prepare failed\n";
@@ -298,9 +301,11 @@ int main (int argc, char** argv)
             songSeconds = std::atof (argv[++i]);
         else if (a == "--rate" && i + 1 < argc)
             rate = std::atof (argv[++i]);
+        else if (a == "--skip-margin" && i + 1 < argc)
+            skipMarginSetting = std::atof (argv[++i]);
         else
         {
-            std::cerr << "usage: " << argv[0] << " [--out <dir>] [--song <file.gp|gp5> [--seconds N]] [--rate Hz]\n";
+            std::cerr << "usage: " << argv[0] << " [--out <dir>] [--song <file.gp|gp5> [--seconds N]] [--rate Hz] [--skip-margin X]\n";
             return 2;
         }
     }

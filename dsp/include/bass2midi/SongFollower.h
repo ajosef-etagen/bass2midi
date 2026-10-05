@@ -12,8 +12,10 @@ namespace bass2midi
     //
     // Position = index of the next expected note. Per attack (time t, seconds of live time):
     //  1. Timing: the score time elapsed since the previous attack, scaled by the live/score tempo
-    //     ratio, is compared with the score distances to the next maxSkip notes; the nearest one is
-    //     taken. This skips notes whose attack was missed. An attack much earlier than the next
+    //     ratio, is compared with the score distances to the next maxSkip notes. The next note is
+    //     taken unless the attack comes clearly after the following note's time (skipMargin); then
+    //     notes are skipped (their attacks were missed). Phrasing that differs from the written
+    //     rhythm is common, so skipping needs clear evidence. An attack much earlier than the next
     //     note (< earlyAttackFraction of its distance) is treated as an extra attack (ghost note,
     //     fill): no prediction, the position stays. A gap far beyond the window is a pause: the
     //     next note is taken.
@@ -36,8 +38,12 @@ namespace bass2midi
             double minPredictConfidence = 0.5; // below: no predictions (Free fallback)
             double confidenceRate = 0.35;      // step towards 1 (match) or 0 (mismatch) per validated note
             int maxSkip = 3;                   // notes one attack may move ahead (missed attacks)
+            double skipMargin = -0.5;          // skip note k only if the attack is later than note k+1's time by this
+                                               // fraction of their spacing (-0.5 = nearest note in time)
             double earlyAttackFraction = 0.4;  // attack earlier than this fraction of the next distance: extra
             double pauseSeconds = 1.5;         // elapsed this far beyond the skip window: pause, take the next note
+            double earlyMatchToleranceSeconds = 0.15; // an early pitch-path note equal to the next note counts as it
+            double earlyMatchToleranceFraction = 0.25; // only this close to its expected time (larger of both)
             double minTempoRatio = 0.6;        // live/score tempo ratio bounds (1 = score tempo)
             double maxTempoRatio = 1.6;
             double tempoAdapt = 0.3;           // EMA step of the tempo ratio per matched note pair

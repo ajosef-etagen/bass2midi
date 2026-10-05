@@ -45,7 +45,7 @@ if(BASS2MIDI_BUILD_TESTS)
     target_link_libraries(bass2midi_baseline PRIVATE bass2midi_eval bass2midi_warnings)
 
     add_executable(bass2midi_analyze eval/AnalyzeRecording.cpp)
-    target_link_libraries(bass2midi_analyze PRIVATE bass2midi_eval bass2midi_warnings)
+    target_link_libraries(bass2midi_analyze PRIVATE bass2midi_eval bass2midi_song bass2midi_warnings)
 
     add_executable(bass2midi_songmode_eval eval/SongModeEval.cpp)
     target_link_libraries(bass2midi_songmode_eval PRIVATE bass2midi_eval bass2midi_song bass2midi_warnings)

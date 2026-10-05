@@ -178,6 +178,62 @@ Attack detector alone, defaults, on the takes:
 | attacks / Free notes ≥ 100 ms | 39 / 27 | 44 / 26 | 126 / 92 | 53 / 37 |
 | attack before Free Note On, median | 48 ms | 49.5 ms | 41 ms | 44 ms |
 
+## First song take: "Something's got a hold on me" (live, with mistakes)
+
+The owner's live DI take of the song whose `.gp` file is loaded: 195 s, 44.1 kHz, 16 bit. The audio is not stored
+in the repository. There are no labels, so two references were used:
+- the score, aligned to the take's Free-mode notes by sequence alignment (Needleman-Wunsch on pitches, then a
+  piecewise-linear time warp through the matched notes);
+- Free mode's pitch as "what was played".
+
+```sh
+./build/bass2midi_analyze take.wav --song song.gp                 # Song Mode events + attacks CSV
+./build/bass2midi_analyze take.wav --song song.gp --mode palette  # Free mode with the song palette
+```
+
+**How closely the take follows the score.** Repeated notes were collapsed, because Free mode merges re-plucks.
+Of 295 played pitch changes, only **66 %** are what the score has at that point. The rest:
+- 51 are other notes;
+- 50 are extra notes;
+- 83 written notes were not played;
+- around bar 80 a section of about 16 s is skipped.
+
+This is a live interpretation, not a transcription error.
+
+**Song Mode on the take** (defaults):
+- 188 predictions: 105 confirmed by the pitch path, **83 wrong**, then corrected about 40–60 ms later.
+- Most wrong predictions lie 1–2 semitones from the played note: in chromatic runs the position is one note off.
+- Raising the prediction threshold (confidence 0.7 / 0.8 / 0.9) does not raise precision above about 55–60 %. It
+  only lowers coverage, because the deviations come without warning.
+- A stricter skip rule (`skipMargin`) did not help either. Default unchanged.
+
+**One fix from this take.** On the long written notes of the intro (one note every 6–12 s), the player re-plucks
+the same pitch in rhythm. A rule ("an early pitch-path note equal to the next written note counts as it") took
+such a re-pluck as the next written bar, seconds early, and everything after it was shifted. The rule now
+applies only near the expected time (`earlyMatchToleranceSeconds` / `earlyMatchToleranceFraction`). Matches
+went from 60 to 146; the synthetic results are unchanged.
+
+**Bar-wise view** (suggested by the owner). Only bars with alignment anchors within ±2.5 s are counted:
+
+| | notes | played as written |
+|---|---|---|
+| first note of the bar (downbeat) | 64 | **72 %** |
+| other notes | 290 | 51 % |
+| downbeat, previous bar's pitches exactly as written | 11 | 91 % (10) |
+| downbeat, previous bar ≥ 75 % as written | 8 | 50 % |
+| downbeat, previous bar < 75 % | 35 | 71 % |
+
+The bar is the more robust unit: downbeats are mostly right. Predicting every downbeat would still send a
+wrong note on about one bar in four. "Previous bar exactly as written" looks like a usable gate, but 11 cases
+are too few to decide.
+
+**Free mode with the song palette on the same take:**
+- 509 of 515 notes are identical to Free mode;
+- 39 notes come more than 5 ms earlier (up to 50 ms);
+- no wrong notes from prediction.
+
+It is the robust option for live interpretations.
+
 ## Requirement status
 
 | # | Requirement | Status |
