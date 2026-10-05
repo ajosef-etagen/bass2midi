@@ -7,6 +7,7 @@
 #include "bass2midi/MultiResolutionPitchTracker.h"
 #include "bass2midi/NotePalette.h"
 #include "bass2midi/NoteStateMachine.h"
+#include "bass2midi/ScorePositionTracker.h"
 #include "bass2midi/SongFollower.h"
 
 #include <array>
@@ -51,6 +52,8 @@ namespace bass2midi
             AttackDetector::Settings attacks;
             SongFollower::Settings follower;
             BarPlayer::Settings bars;
+            ScorePositionTracker::Settings scoreTracker;
+            double noteAttackLookbackMs = 150.0; // a played note's time = the attack detected this recently before it
             double hopSeconds = 0.0025;
             double onsetSettleWindowFraction = 0.75;
             double validationWindowMs = 200.0;
@@ -112,6 +115,9 @@ namespace bass2midi
             double barTempoRatio = 1.0;
             double nextAnchorSeconds = -1.0;
             int barsStarted = 0, barStops = 0, rootMatches = 0, rootMismatches = 0, barFallbacks = 0;
+            // Score follower (display): position of the band in the song
+            ScorePositionTracker::Position score;
+            bool scoreArmed = false;
         };
 
         // Non-real-time.
@@ -131,6 +137,12 @@ namespace bass2midi
         void setTimeline (const ExpectedNote* notes, int count) noexcept;
         // With the bars in playing order (needed for bar playback). Same ownership rule.
         void setTimeline (const ExpectedNote* notes, int count, const TimelineBar* bars, int barCount) noexcept;
+        // Real-time safe. Score follower: arm at played bar `bar` with the expected BPM; the clock starts
+        // with the first played note, or at once with startScoreClock(). Runs in every mode.
+        void armScoreFollower (int bar, double bpm) noexcept { scoreTracker.arm (bar, bpm); }
+        void startScoreClock() noexcept { scoreTracker.begin (seconds (samplePosition)); }
+        void stopScoreFollower() noexcept { scoreTracker.stop(); }
+
         // Real-time safe. Bar playback waits for the anchor attack of this bar (playing order).
         void setBarStart (int playedBar) noexcept { pendingBarStart = std::max (0, playedBar); }
         void setSongPosition (int index) noexcept;
@@ -168,6 +180,7 @@ namespace bass2midi
         SongFollower follower;
         Mode mode = Mode::free, appliedMode = Mode::free;
         BarPlayer barPlayer;
+        ScorePositionTracker scoreTracker;
         int timelineBarCount = 0;
         int pendingBarStart = 0;          // -1: none pending
         bool noteMachineSilent = false;   // Free path runs without output while bar playback outputs

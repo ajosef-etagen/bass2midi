@@ -29,7 +29,8 @@ class MidiOutputSender;
 //    counter), setPalette (two 64-bit words under a sequence counter; a torn read is skipped and
 //    retried at the next block, never waited for), setSongTimeline (atomic pointer to an immutable
 //    timeline; the old one is freed on the message thread only after the audio thread has
-//    acknowledged the new one), setSongMode, setSongPosition (atomics)
+//    acknowledged the new one), setMode, setSongPosition, setBarStart, score-follower commands
+//    (atomics; a command counter makes each request apply exactly once)
 //  - audio thread -> sender thread: MidiOutputSender::pushFromAudioThread (SPSC FIFO)
 //  - audio thread -> message thread: Snapshot atomics
 class AudioEngine final : public juce::AudioIODeviceCallback
@@ -68,6 +69,16 @@ public:
         int lastPredictedNote = -1, lastValidatedNote = -1, lastValidationMatch = -1;
         double lastTriggerLatencyMs = -1.0; // attack detection -> MIDI queued (block end)
         int predictions = 0, corrections = 0, resyncs = 0, extraAttacks = 0, ghostAttacks = 0, unpitchedAttacks = 0;
+
+        // Bar playback
+        bool barActive = false, barOutputting = false;
+        int barWritten = -1, barsStarted = 0, barStops = 0, barFallbacks = 0, rootMatches = 0, rootMismatches = 0;
+        double barTempoRatio = 1.0;
+
+        // Score follower
+        bool scoreRunning = false, scoreArmed = false;
+        double scoreSeconds = 0.0, scoreBeat = 1.0, scoreBpm = 0.0, scoreConfidence = 0.0;
+        int scorePlayedBar = -1, scoreWrittenBar = -1, scoreNextNote = -1;
     };
 
     // Message thread.
@@ -88,9 +99,23 @@ public:
 
     // Message thread. The song's expected-note timeline for Song Mode (empty = none). Copied; the
     // audio thread switches at the next block and restarts at note 0.
-    void setSongTimeline (std::vector<bass2midi::ExpectedNote> notes);
+    void setSongTimeline (std::vector<bass2midi::ExpectedNote> notes, std::vector<bass2midi::TimelineBar> bars);
     // Message thread. Song Mode on/off (needs a timeline to have an effect).
-    void setSongMode (bool enabled) noexcept { pendingSongMode.store (enabled); }
+    enum class Mode { free = 0, song = 1, bar = 2 };
+    void setMode (Mode mode) noexcept { pendingMode.store ((int) mode); }
+    // Message thread. Bar playback waits for the downbeat of played bar `bar`.
+    void setBarStart (int bar) noexcept { pendingBarStart.store (juce::jmax (0, bar)); }
+    // Message thread. Score follower: arm at played bar `bar` with the expected BPM (the clock starts
+    // with the first played note), start the clock now, or stop it.
+    void armScoreFollower (int bar, double bpm) noexcept
+    {
+        pendingScoreBar.store (juce::jmax (0, bar));
+        pendingScoreBpm.store (bpm);
+        pendingScoreCommand.store (1);
+        scoreCommandCounter.fetch_add (1);
+    }
+    void startScoreClock() noexcept { pendingScoreCommand.store (2); scoreCommandCounter.fetch_add (1); }
+    void stopScoreFollower() noexcept { pendingScoreCommand.store (3); scoreCommandCounter.fetch_add (1); }
     // Message thread. Experimental re-pluck detection for Song Mode (periodicity break).
     void setRepluckDetection (bool enabled) noexcept { pendingRepluck.store (enabled); }
     // Message thread. The next attack is expected to be timeline note `index`.
@@ -112,6 +137,7 @@ private:
     struct Timeline
     {
         std::vector<bass2midi::ExpectedNote> notes;
+        std::vector<bass2midi::TimelineBar> bars;
     };
 
     void applyPendingSettings() noexcept;
@@ -150,7 +176,11 @@ private:
     std::atomic<const Timeline*> appliedTimeline { nullptr };
     const Timeline* currentTimeline = nullptr;          // audio thread
     bool forceTimelineApply = true;                     // audio thread
-    std::atomic<bool> pendingSongMode { false };
+    std::atomic<int> pendingMode { 0 };
+    std::atomic<int> pendingBarStart { -1 };
+    std::atomic<int> pendingScoreBar { 0 }, pendingScoreCommand { 0 }, scoreCommandCounter { 0 };
+    std::atomic<double> pendingScoreBpm { 120.0 };
+    int appliedScoreCommandCounter = 0; // audio thread
     std::atomic<bool> pendingRepluck { false };
     std::atomic<int> pendingSongPosition { -1 };
 
@@ -166,6 +196,10 @@ private:
     std::atomic<int> lastPredictedNote { -1 }, lastValidatedNote { -1 }, lastValidationMatch { -1 };
     std::atomic<double> songConfidence { 0.0 }, songTempoRatio { 1.0 }, lastTriggerLatencyMs { -1.0 };
     std::atomic<int> predictions { 0 }, corrections { 0 }, resyncs { 0 }, extraAttacks { 0 }, ghostAttacks { 0 }, unpitchedAttacks { 0 };
+    std::atomic<bool> barActive { false }, barOutputting { false }, scoreRunning { false }, scoreArmed { false };
+    std::atomic<int> barWritten { -1 }, barsStarted { 0 }, barStops { 0 }, barFallbacks { 0 }, rootMatches { 0 }, rootMismatches { 0 };
+    std::atomic<double> barTempoRatio { 1.0 }, scoreSeconds { 0.0 }, scoreBeat { 1.0 }, scoreBpm { 0.0 }, scoreConfidence { 0.0 };
+    std::atomic<int> scorePlayedBar { -1 }, scoreWrittenBar { -1 }, scoreNextNote { -1 };
 
     // Callback cost, measured with the high-resolution tick counter (lock- and allocation-free).
     std::atomic<std::int64_t> worstCallbackTicks { 0 }, totalCallbackTicks { 0 }, callbackCount { 0 };

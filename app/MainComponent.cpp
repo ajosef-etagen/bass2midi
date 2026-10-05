@@ -14,7 +14,24 @@ namespace
     constexpr const char* transposeKey = "transposeSemitones";
     constexpr const char* songLibraryKey = "songLibrary";
     constexpr const char* selectedSongKey = "selectedSong";
-    constexpr const char* songModeKey = "songMode";
+    constexpr const char* songModeKey = "songMode";         // legacy bool (Song Mode on)
+    constexpr const char* operatingModeKey = "operatingMode"; // 1 Free, 2 Song Mode, 3 Bar playback (combo ids)
+    constexpr const char* tablatureOpenKey = "tablatureOpen";
+    constexpr const char* startBarKey = "startBar";
+
+    // The tablature window: closing it only hides it.
+    class TablatureWindow final : public juce::DocumentWindow
+    {
+    public:
+        TablatureWindow() : DocumentWindow ("Bass2MIDI - Tablature",
+                                            juce::Desktop::getInstance().getDefaultLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId),
+                                            DocumentWindow::closeButton)
+        {
+            setUsingNativeTitleBar (true);
+            setResizable (true, true);
+        }
+        void closeButtonPressed() override { setVisible (false); }
+    };
     constexpr const char* repluckKey = "repluckDetection";
 }
 
@@ -97,8 +114,20 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     for (auto* c : std::initializer_list<juce::Component*> { &songLabel, &songBox, &previousSongButton, &nextSongButton,
                                                              &addSongsButton, &removeSongButton, &trackLabel, &trackBox, &paletteLabel })
         addAndMakeVisible (*c);
-    songModeToggle.setToggleState (settings.getBoolValue (songModeKey, false), juce::dontSendNotification);
-    songModeToggle.onClick = [this] { songModeChanged(); };
+    modeBox.addItem ("Free: pitch detection decides", 1);
+    modeBox.addItem ("Song Mode: an attack plays the song's next note", 2);
+    modeBox.addItem ("Bar playback: your downbeat starts the bar, the song's notes play", 3);
+    modeBox.setSelectedId (juce::jlimit (1, 3, settings.getIntValue (operatingModeKey, settings.getBoolValue (songModeKey, false) ? 2 : 1)),
+                           juce::dontSendNotification);
+    modeBox.onChange = [this] { songModeChanged(); };
+    modeLabel.setJustificationType (juce::Justification::centredRight);
+    bpmLabel.setJustificationType (juce::Justification::centredRight);
+    bpmSlider.setRange (30.0, 300.0, 1.0);
+    bpmSlider.setValue (120.0, juce::dontSendNotification);
+    bpmSlider.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 50, 24);
+    startClockButton.onClick = [this] { engine.startScoreClock(); };
+    stopClockButton.onClick = [this] { engine.stopScoreFollower(); };
+    tablatureButton.onClick = [this] { showTablature(); };
     repluckToggle.setToggleState (settings.getBoolValue (repluckKey, false), juce::dontSendNotification);
     repluckToggle.onClick = [this] { songModeChanged(); };
     repluckToggle.setTooltip ("Finds plucks of a still-ringing string (repeated notes) from the break in periodicity. "
@@ -107,7 +136,8 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     startBarSlider.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 50, 24);
     startBarLabel.setJustificationType (juce::Justification::centredRight);
     restartButton.onClick = [this] { restartAtBar(); };
-    for (auto* c : std::initializer_list<juce::Component*> { &songModeToggle, &repluckToggle, &startBarLabel, &startBarSlider, &restartButton })
+    for (auto* c : std::initializer_list<juce::Component*> { &modeLabel, &modeBox, &repluckToggle, &startBarLabel, &startBarSlider, &restartButton,
+                                                             &bpmLabel, &bpmSlider, &startClockButton, &stopClockButton, &tablatureButton })
         addAndMakeVisible (*c);
     refreshSongControls();
     {
@@ -118,6 +148,8 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     }
     songChosen();
     songModeChanged();
+    if (settings.getBoolValue (tablatureOpenKey, false))
+        showTablature();
 
     testNoteButton.onClick = [this] { sendTestNote(); };
     testNoteButton.setEnabled (midiSender.isOpen());
@@ -125,13 +157,14 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     addAndMakeVisible (testNoteButton);
     addAndMakeVisible (resetStatsButton);
 
-    setSize (720, 1120);
+    setSize (720, 1180);
     startTimerHz (20);
 }
 
 MainComponent::~MainComponent()
 {
     stopTimer();
+    settings.setValue (tablatureOpenKey, tablatureWindow != nullptr && tablatureWindow->isVisible());
     saveDeviceState();
 
     if (testNoteSounding)
@@ -267,13 +300,27 @@ void MainComponent::applySongPalette()
 
     // Song Mode timeline (playing order, repeats unrolled). Free mode or an unusable song: empty.
     songTimeline.clear();
+    songBars.clear();
     if (index >= 0 && songs[index].usable())
-        songTimeline = bass2midi::song::expectedNotes (songs[index].song, songs[index].track);
-    engine.setSongTimeline (songTimeline);
+        songTimeline = bass2midi::song::expectedNotes (songs[index].song, songs[index].track, songBars);
+    engine.setSongTimeline (songTimeline, songBars);
+    if (tabView != nullptr)
+        tabView->setSong (&songTimeline, &songBars);
     const int bars = index >= 0 ? juce::jmax (1, songs[index].song.barCount) : 1;
     startBarSlider.setRange (1.0, (double) bars, 1.0);
-    startBarSlider.setValue (1.0, juce::dontSendNotification);
-    songModeToggle.setEnabled (! songTimeline.empty());
+    startBarSlider.setValue (juce::jlimit (1, bars, settings.getIntValue (startBarKey, 1)), juce::dontSendNotification);
+    // Score follower: armed at the start bar with the file's tempo there; the clock starts with the first note.
+    if (! songBars.empty())
+    {
+        const int playedBar = playedBarForWritten ((int) startBarSlider.getValue() - 1);
+        bpmSlider.setValue (std::round (scoreBpmAtBar (playedBar)), juce::dontSendNotification);
+        engine.armScoreFollower (playedBar, bpmSlider.getValue());
+        engine.setBarStart (playedBar);
+    }
+    modeBox.setItemEnabled (2, ! songTimeline.empty());
+    modeBox.setItemEnabled (3, ! songTimeline.empty());
+    for (auto* c : std::initializer_list<juce::Component*> { &bpmSlider, &startClockButton, &stopClockButton })
+        c->setEnabled (! songTimeline.empty());
     repluckToggle.setEnabled (! songTimeline.empty());
     startBarSlider.setEnabled (! songTimeline.empty());
     restartButton.setEnabled (! songTimeline.empty());
@@ -285,15 +332,71 @@ void MainComponent::applySongPalette()
 
 void MainComponent::songModeChanged()
 {
-    engine.setSongMode (songModeToggle.getToggleState());
+    const int id = modeBox.getSelectedId();
+    engine.setMode (id == 2 ? AudioEngine::Mode::song : id == 3 ? AudioEngine::Mode::bar : AudioEngine::Mode::free);
     engine.setRepluckDetection (repluckToggle.getToggleState());
-    settings.setValue (songModeKey, songModeToggle.getToggleState());
+    settings.setValue (operatingModeKey, id);
     settings.setValue (repluckKey, repluckToggle.getToggleState());
+}
+
+double MainComponent::scoreBpmAtBar (int playedBar) const
+{
+    if (playedBar < 0 || playedBar >= (int) songBars.size())
+        return 120.0;
+    const auto& bar = songBars[(size_t) playedBar];
+    return 60.0 * juce::jmax (1, bar.numerator) / bar.lengthSeconds;
+}
+
+int MainComponent::playedBarForWritten (int writtenBar) const
+{
+    for (int b = 0; b < (int) songBars.size(); ++b)
+        if (songBars[(size_t) b].writtenBar >= writtenBar)
+            return b;
+    return 0;
+}
+
+void MainComponent::showTablature()
+{
+    if (tablatureWindow == nullptr)
+    {
+        tablatureWindow = std::make_unique<TablatureWindow>();
+        auto view = std::make_unique<TabView>();
+        tabView = view.get();
+        tabView->setSize (1000, 300);
+        tabView->setSong (&songTimeline, &songBars);
+        tablatureWindow->setContentOwned (view.release(), true);
+        tablatureWindow->centreWithSize (1000, 300);
+    }
+    tablatureWindow->setVisible (true);
+    tablatureWindow->toFront (true);
+    // At start-up the main window appears after this one: once it has, put the tablature beside it
+    // (or below, if the screen is too narrow) instead of on top of it, and bring it forward.
+    juce::Component::SafePointer<juce::DocumentWindow> window (tablatureWindow.get());
+    juce::Component::SafePointer<MainComponent> self (this);
+    juce::Timer::callAfterDelay (500, [window, self]
+    {
+        if (window == nullptr || self == nullptr || ! window->isVisible())
+            return;
+        const auto main = self->getTopLevelComponent()->getScreenBounds();
+        auto bounds = window->getBounds();
+        if (bounds.intersects (main))
+        {
+            const auto screen = juce::Desktop::getInstance().getDisplays().getDisplayForRect (main)->userArea;
+            if (main.getRight() + bounds.getWidth() <= screen.getRight())
+                bounds.setPosition (main.getRight() + 8, main.getY());
+            else
+                bounds.setPosition (screen.getX(), juce::jmax (screen.getY(), screen.getBottom() - bounds.getHeight()));
+            window->setBounds (bounds);
+        }
+        window->toFront (false);
+    });
+    settings.setValue (tablatureOpenKey, true);
 }
 
 void MainComponent::restartAtBar()
 {
-    // First expected note at or after the chosen written bar (its first occurrence in playing order).
+    // Every follower restarts at the chosen written bar (its first occurrence in playing order):
+    // Song Mode at the first note there, bar playback at that bar, the score follower armed there.
     const int bar = (int) startBarSlider.getValue() - 1;
     int index = 0;
     for (int i = 0; i < (int) songTimeline.size(); ++i)
@@ -303,6 +406,10 @@ void MainComponent::restartAtBar()
             break;
         }
     engine.setSongPosition (index);
+    const int playedBar = playedBarForWritten (bar);
+    engine.setBarStart (playedBar);
+    engine.armScoreFollower (playedBar, bpmSlider.getValue());
+    settings.setValue (startBarKey, bar + 1);
 }
 
 juce::String MainComponent::songModeText (const AudioEngine::Snapshot& s) const
@@ -312,7 +419,7 @@ juce::String MainComponent::songModeText (const AudioEngine::Snapshot& s) const
     text << "Song Mode\n";
     if (songTimeline.empty())
         return text << "  off            no song selected (Free mode)\n";
-    if (! songModeToggle.getToggleState())
+    if (modeBox.getSelectedId() != 2)
         text << "  off            Free mode (" << (int) songTimeline.size() << " notes ready)\n";
     else
         text << "  on             " << (! s.songActive ? juce::String ("waiting for the audio device")
@@ -498,7 +605,43 @@ void MainComponent::timerCallback()
                                                            : juce::String ("none (Free mode)")) << "\n"
          << "  early frames   " << s.paletteRelievedFrames << " (decided sooner thanks to the palette)\n"
          << "  delayed notes  " << s.paletteDelayed << " (off-palette, needed extra confirmation)\n"
-         << songModeText (s);
+         << songModeText (s)
+         << "Bar playback\n"
+         << "  state          " << (! s.barActive ? juce::String ("off")
+                                   : s.barOutputting ? "playing bar " + juce::String (s.barWritten + 1)
+                                                     : "waiting / Free fallback at bar " + juce::String (s.barWritten + 1)) << "\n"
+         << "  counts         " << s.barsStarted << " bars, " << s.barStops << " stops, " << s.barFallbacks << " fallbacks, roots "
+         << s.rootMatches << " ok / " << s.rootMismatches << " off, tempo x" << juce::String (s.barTempoRatio, 2) << "\n"
+         << "Score follower\n"
+         << "  position       " << (s.scoreWrittenBar >= 0 ? "bar " + juce::String (s.scoreWrittenBar + 1) + " beat " + juce::String (s.scoreBeat, 1)
+                                                         : juce::String ("-"))
+         << (s.scoreRunning ? "   " + juce::String (juce::roundToInt (s.scoreBpm)) + " BPM, confidence " + juce::String (s.scoreConfidence, 2)
+                            : s.scoreArmed ? juce::String ("   armed, starts with the first note") : juce::String ("   stopped")) << "\n";
+    if (tabView != nullptr && tablatureWindow != nullptr && tablatureWindow->isVisible())
+    {
+        TabView::Position p;
+        p.running = s.scoreRunning;
+        p.armed = s.scoreArmed;
+        p.scoreSeconds = s.scoreSeconds;
+        p.playedBar = s.scorePlayedBar;
+        p.writtenBar = s.scoreWrittenBar;
+        p.beat = s.scoreBeat;
+        p.bpm = s.scoreBpm;
+        p.confidence = s.scoreConfidence;
+        p.nextNote = s.scoreNextNote;
+        if (s.sampleRateHz <= 0.0 && ! songBars.empty())
+        {
+            // No audio running: show the chosen start bar.
+            p.playedBar = playedBarForWritten ((int) startBarSlider.getValue() - 1);
+            p.writtenBar = songBars[(size_t) p.playedBar].writtenBar;
+            p.scoreSeconds = songBars[(size_t) p.playedBar].startSeconds;
+            p.beat = 1.0;
+            p.bpm = bpmSlider.getValue();
+            p.armed = true;
+            p.nextNote = songBars[(size_t) p.playedBar].noteCount > 0 ? songBars[(size_t) p.playedBar].firstNote : -1;
+        }
+        tabView->setPosition (p);
+    }
     engine.releaseRetiredTimelines();
 
     diagnostics.setText (text, juce::dontSendNotification);
@@ -549,13 +692,24 @@ void MainComponent::resized()
     area.removeFromTop (2);
     paletteLabel.setBounds (area.removeFromTop (24));
     area.removeFromTop (4);
-    songModeToggle.setBounds (area.removeFromTop (26));
-    repluckToggle.setBounds (area.removeFromTop (26).withTrimmedLeft (24));
+    auto modeRow = area.removeFromTop (28);
+    modeLabel.setBounds (modeRow.removeFromLeft (60));
+    modeBox.setBounds (modeRow.removeFromLeft (440));
+    repluckToggle.setBounds (area.removeFromTop (26).withTrimmedLeft (60));
     auto startRow = area.removeFromTop (28);
     startBarLabel.setBounds (startRow.removeFromLeft (100));
-    startBarSlider.setBounds (startRow.removeFromLeft (140));
-    startRow.removeFromLeft (8);
-    restartButton.setBounds (startRow.removeFromLeft (120));
+    startBarSlider.setBounds (startRow.removeFromLeft (130));
+    startRow.removeFromLeft (4);
+    restartButton.setBounds (startRow.removeFromLeft (90));
+    bpmLabel.setBounds (startRow.removeFromLeft (50));
+    bpmSlider.setBounds (startRow.removeFromLeft (130));
+    area.removeFromTop (4);
+    auto clockRow = area.removeFromTop (28).withTrimmedLeft (100);
+    startClockButton.setBounds (clockRow.removeFromLeft (110));
+    clockRow.removeFromLeft (4);
+    stopClockButton.setBounds (clockRow.removeFromLeft (110));
+    clockRow.removeFromLeft (12);
+    tablatureButton.setBounds (clockRow.removeFromLeft (140));
     area.removeFromTop (8);
     midiStatus.setBounds (area.removeFromTop (24));
 

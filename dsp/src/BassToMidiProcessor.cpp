@@ -25,7 +25,7 @@ namespace bass2midi
 
         settings.attacks.gateDbfs = settings.notes.gateOpenDbfs;
         if (! attackDetector.prepare (sampleRateHz, settings.attacks) || ! follower.setSettings (settings.follower)
-            || ! barPlayer.setSettings (settings.bars))
+            || ! barPlayer.setSettings (settings.bars) || ! scoreTracker.setSettings (settings.scoreTracker))
             return false;
 
         validationFramesNeeded = settings.validationFrames;
@@ -68,6 +68,7 @@ namespace bass2midi
     {
         follower.setTimeline (notes, count);
         barPlayer.setTimeline (notes, count, bars, barCount);
+        scoreTracker.setTimeline (notes, count, bars, barCount);
         timelineBarCount = bars != nullptr && notes != nullptr && count > 0 ? barCount : 0;
         pendingBarStart = 0;
         validating = false;
@@ -258,6 +259,8 @@ namespace bass2midi
         diagnostics.rootMatches = barPlayer.getRootMatches();
         diagnostics.rootMismatches = barPlayer.getRootMismatches();
         diagnostics.barFallbacks = barPlayer.getFallbacks();
+        diagnostics.score = scoreTracker.positionAt (seconds (blockEnd));
+        diagnostics.scoreArmed = scoreTracker.isArmed();
     }
 
     void BassToMidiProcessor::handleFrame (const float* frame, std::int64_t frameEnd, std::int64_t blockEnd, Output& out) noexcept
@@ -298,6 +301,16 @@ namespace bass2midi
                 features.pitch.valid = false;
             const auto o = noteMachine.processFrame (features);
             correction = noteMachine.getPredictionCorrections() != correctionsBefore;
+
+            // Notes the pitch path decided (not predictions) tell the score follower where the band is.
+            for (int i = 0; i < o.count; ++i)
+                if (o.events[static_cast<std::size_t> (i)].type == NoteEvent::Type::noteOn)
+                {
+                    const auto lookback = static_cast<std::int64_t> (settings.noteAttackLookbackMs * 1.0e-3 * sampleRateHz);
+                    const bool recentAttack = diagnostics.lastAttackSample >= 0 && frameEnd - diagnostics.lastAttackSample <= lookback;
+                    const auto attackSample = recentAttack ? diagnostics.lastAttackSample : frameEnd - estimate.windowSamples / 2;
+                    scoreTracker.onNote (seconds (attackSample), o.events[static_cast<std::size_t> (i)].note);
+                }
             if (! noteMachineSilent)
                 emit (o, blockEnd, false, correction, out);
         }

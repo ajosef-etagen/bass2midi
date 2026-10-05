@@ -26,10 +26,11 @@ void AudioEngine::setPalette (const bass2midi::NotePalette& palette) noexcept
     paletteSequence.fetch_add (1);
 }
 
-void AudioEngine::setSongTimeline (std::vector<bass2midi::ExpectedNote> notes)
+void AudioEngine::setSongTimeline (std::vector<bass2midi::ExpectedNote> notes, std::vector<bass2midi::TimelineBar> bars)
 {
     auto timeline = std::make_unique<Timeline>();
     timeline->notes = std::move (notes);
+    timeline->bars = std::move (bars);
     pendingTimeline.store (timeline.get());
     timelines.push_back (std::move (timeline));
     releaseRetiredTimelines();
@@ -74,14 +75,32 @@ void AudioEngine::applyPendingSong() noexcept
         currentTimeline = pending;
         forceTimelineApply = false;
         if (pending != nullptr)
-            processor.setTimeline (pending->notes.data(), (int) pending->notes.size());
+            processor.setTimeline (pending->notes.data(), (int) pending->notes.size(), pending->bars.data(), (int) pending->bars.size());
         else
-            processor.setTimeline (nullptr, 0);
+            processor.setTimeline (nullptr, 0, nullptr, 0);
         appliedTimeline.store (pending);
     }
 
-    processor.setMode (pendingSongMode.load (std::memory_order_relaxed) ? bass2midi::BassToMidiProcessor::Mode::song
-                                                                         : bass2midi::BassToMidiProcessor::Mode::free);
+    const int mode = pendingMode.load (std::memory_order_relaxed);
+    processor.setMode (mode == 1 ? bass2midi::BassToMidiProcessor::Mode::song
+                     : mode == 2 ? bass2midi::BassToMidiProcessor::Mode::bar
+                                 : bass2midi::BassToMidiProcessor::Mode::free);
+    const auto barStart = pendingBarStart.exchange (-1);
+    if (barStart >= 0)
+        processor.setBarStart (barStart);
+
+    const auto counter = scoreCommandCounter.load();
+    if (counter != appliedScoreCommandCounter)
+    {
+        appliedScoreCommandCounter = counter;
+        switch (pendingScoreCommand.load())
+        {
+            case 1: processor.armScoreFollower (pendingScoreBar.load(), pendingScoreBpm.load()); break;
+            case 2: processor.startScoreClock(); break;
+            case 3: processor.stopScoreFollower(); break;
+            default: break;
+        }
+    }
 
     processor.setPeriodicityEnabled (pendingRepluck.load (std::memory_order_relaxed));
 
@@ -247,6 +266,24 @@ void AudioEngine::publishDiagnostics() noexcept
     extraAttacks.store (d.extraAttacks, relaxed);
     ghostAttacks.store (d.ghostAttacks, relaxed);
     unpitchedAttacks.store (d.unpitchedAttacks, relaxed);
+    barActive.store (d.barActive, relaxed);
+    barOutputting.store (d.barOutputting, relaxed);
+    barWritten.store (d.barWritten, relaxed);
+    barsStarted.store (d.barsStarted, relaxed);
+    barStops.store (d.barStops, relaxed);
+    barFallbacks.store (d.barFallbacks, relaxed);
+    rootMatches.store (d.rootMatches, relaxed);
+    rootMismatches.store (d.rootMismatches, relaxed);
+    barTempoRatio.store (d.barTempoRatio, relaxed);
+    scoreRunning.store (d.score.running, relaxed);
+    scoreArmed.store (d.scoreArmed, relaxed);
+    scoreSeconds.store (d.score.scoreSeconds, relaxed);
+    scoreBeat.store (d.score.beat, relaxed);
+    scoreBpm.store (d.score.bpm, relaxed);
+    scoreConfidence.store (d.score.confidence, relaxed);
+    scorePlayedBar.store (d.score.playedBar, relaxed);
+    scoreWrittenBar.store (d.score.writtenBar, relaxed);
+    scoreNextNote.store (d.score.nextNote, relaxed);
 }
 
 AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
@@ -287,6 +324,24 @@ AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
     s.extraAttacks = extraAttacks.load();
     s.ghostAttacks = ghostAttacks.load();
     s.unpitchedAttacks = unpitchedAttacks.load();
+    s.barActive = barActive.load();
+    s.barOutputting = barOutputting.load();
+    s.barWritten = barWritten.load();
+    s.barsStarted = barsStarted.load();
+    s.barStops = barStops.load();
+    s.barFallbacks = barFallbacks.load();
+    s.rootMatches = rootMatches.load();
+    s.rootMismatches = rootMismatches.load();
+    s.barTempoRatio = barTempoRatio.load();
+    s.scoreRunning = scoreRunning.load();
+    s.scoreArmed = scoreArmed.load();
+    s.scoreSeconds = scoreSeconds.load();
+    s.scoreBeat = scoreBeat.load();
+    s.scoreBpm = scoreBpm.load();
+    s.scoreConfidence = scoreConfidence.load();
+    s.scorePlayedBar = scorePlayedBar.load();
+    s.scoreWrittenBar = scoreWrittenBar.load();
+    s.scoreNextNote = scoreNextNote.load();
 
     const auto ticksPerMs = (double) juce::Time::getHighResolutionTicksPerSecond() / 1000.0;
     const auto count = callbackCount.load();

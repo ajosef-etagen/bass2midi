@@ -21,7 +21,8 @@ target_sources(Bass2MIDIApp PRIVATE
     MainComponent.cpp
     AudioEngine.cpp
     MidiOutputSender.cpp
-    SongLibrary.cpp)
+    SongLibrary.cpp
+    TabView.cpp)
 
 target_compile_definitions(Bass2MIDIApp PRIVATE
     BASS2MIDI_VERSION="${PROJECT_VERSION}"

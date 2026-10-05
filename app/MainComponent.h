@@ -3,6 +3,7 @@
 #include "AudioEngine.h"
 #include "MidiOutputSender.h"
 #include "SongLibrary.h"
+#include "TabView.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -48,6 +49,9 @@ private:
     void saveSongState();
     void songModeChanged();
     void restartAtBar();
+    void showTablature();
+    double scoreBpmAtBar (int playedBar) const;
+    int playedBarForWritten (int writtenBar) const;
     juce::String songModeText (const AudioEngine::Snapshot& s) const;
     int selectedSongIndex() const { return songBox.getSelectedId() - songIdOffset; } // -1 = Free mode
 
@@ -78,11 +82,19 @@ private:
     juce::Label trackLabel { {}, "Bass track:" };
     juce::ComboBox trackBox;
     juce::Label paletteLabel;
-    juce::ToggleButton songModeToggle { "Song Mode: a bass attack plays the song's next note at once" };
+    juce::Label modeLabel { {}, "Mode:" };
+    juce::ComboBox modeBox;   // Free / Song Mode (notes) / Bar playback
     juce::ToggleButton repluckToggle { "Detect re-plucks of ringing notes (experimental)" };
     juce::Label startBarLabel { {}, "Start at bar:" };
     juce::Slider startBarSlider { juce::Slider::IncDecButtons, juce::Slider::TextBoxLeft };
-    juce::TextButton restartButton { "Restart here" };
+    juce::TextButton restartButton { "Go to bar" };
+    juce::Label bpmLabel { {}, "BPM:" };
+    juce::Slider bpmSlider { juce::Slider::IncDecButtons, juce::Slider::TextBoxLeft };
+    juce::TextButton startClockButton { "Start clock" }, stopClockButton { "Stop clock" };
+    juce::TextButton tablatureButton { "Show tablature" };
+    std::vector<bass2midi::TimelineBar> songBars;       // bars in playing order (with songTimeline)
+    std::unique_ptr<juce::DocumentWindow> tablatureWindow;
+    TabView* tabView = nullptr;                         // owned by tablatureWindow
     std::vector<bass2midi::ExpectedNote> songTimeline; // message-thread copy of what the engine follows
     std::unique_ptr<juce::FileChooser> songChooser;
 
