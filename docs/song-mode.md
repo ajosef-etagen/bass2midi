@@ -27,7 +27,7 @@ score position in step. Both are covered below.
 | Proposal | Assessment | What was done |
 |---|---|---|
 | Song position from a band microphone: beat tracking, chroma, online DTW | This is the hardest and riskiest part: live band mix, bleed, arrangement changes, research-grade alignment. It is not needed to test the hypothesis. The bass player's own attacks already carry the timing. | Deferred. The **attack-driven note follower** replaces it (below). No microphone is needed. The microphone path stays an option for re-entry after long breaks. |
-| Phase 1: "manually controlled song position" | A fixed clock drifts and has no recovery. | Manual start ("Start at bar" plus "Restart here"). From there the follower re-aligns itself. |
+| Phase 1: "manually controlled song position" | A fixed clock drifts and has no recovery. | Manual start ("Start at bar" plus "Go to bar"). From there the follower re-aligns itself. |
 | "Coarse pitch validates the expected note before sending" | Physically impossible in a few ms. One period of A1 is 18 ms, of E1 24 ms. Every pitch estimate needs at least about one period, and in practice more. | The note is sent on the attack. Pitch validates **afterwards** (about 20–55 ms later). It either confirms (raising confidence and refining the tempo) or corrects (Note Off + Note On of the detected note, then re-alignment). |
 | Confidence model with four values | Sensible. | Position confidence: follower, updated from pitch verdicts. Expected-note choice: timing fit with a tempo ratio. Attack strength: ghost filter, unpitched-attack retraction. Pitch plausibility: verdict and correction. |
 | "Low confidence: fallback" | Essential. | Below confidence 0.5 there is no prediction; the normal Free pitch path plays. The follower keeps tracking from those notes and recovers. |
@@ -195,8 +195,10 @@ in the repository. There are no labels, so two references were used:
 Of 295 played pitch changes, only **66 %** are what the score has at that point. The rest:
 - 51 are other notes;
 - 50 are extra notes;
-- 83 written notes were not played;
-- around bar 80 a section of about 16 s is skipped.
+- 83 written notes were not played.
+
+An earlier version of this note said that a section of about 16 s around bar 80 was skipped. That was an artifact
+of the alignment: bars 86–101 repeat one pattern, and the alignment matched the take to the wrong repetition.
 
 This is a live interpretation, not a transcription error.
 

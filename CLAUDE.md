@@ -18,10 +18,10 @@ V1 is delivered as a **standalone macOS app** that opens the audio interface its
 
 | Path | Contents | Depends on |
 | --- | --- | --- |
-| `dsp/` | Real-time DSP core (`bass2midi_dsp`): framing, FFT, pitch tracking, attack detection, note state machine, Song Mode follower, `BassToMidiProcessor` (the full chain used by app and evaluation) | C++20 only, no JUCE |
+| `dsp/` | Real-time DSP core (`bass2midi_dsp`): framing, FFT, pitch tracking, attack detection, note state machine, Song Mode follower, bar player, score position tracker, `BassToMidiProcessor` (the full chain used by app and evaluation) | C++20 only, no JUCE |
 | `song/` | Guitar Pro song files (.gp, .gp5) → tracks, notes, song palette (non-real-time) | `dsp/`, zlib |
-| `app/` | Standalone JUCE app: audio device, virtual MIDI port, sender thread, song list, diagnostics UI | JUCE 8, `dsp/`, `song/` |
-| `eval/` | Offline evaluation: synthetic corpus, reference setups, `bass2midi_baseline`, `bass2midi_songmode_eval` | `dsp/`, `song/` |
+| `app/` | Standalone JUCE app: audio device, virtual MIDI port, sender thread, song list, mode selector, tablature window, diagnostics UI | JUCE 8, `dsp/`, `song/` |
+| `eval/` | Offline evaluation: synthetic corpus, reference setups, `bass2midi_baseline`, `bass2midi_songmode_eval`, `bass2midi_barmode_eval` | `dsp/`, `song/` |
 | `tests/` | doctest unit tests (`bass2midi_tests`), generated song fixtures in `tests/data/` | `dsp/`, `eval/`, `song/` |
 | `docs/` | Design notes and versioned evaluation results | - |
 
@@ -34,6 +34,7 @@ ctest --test-dir build --output-on-failure
 ./build/bass2midi_baseline --out docs/baseline/<name>   # full corpus, ~90 s; --quick for a subset
 ./build/bass2midi_baseline --palette --out docs/baseline/<name>   # Free vs. song-palette study
 ./build/bass2midi_songmode_eval --out docs/baseline/<name>        # Free vs. Song Mode on synthetic performances
+./build/bass2midi_barmode_eval --out docs/baseline/<name>         # bar playback on synthetic root-only performances
 ```
 
 ## Scope
@@ -178,6 +179,27 @@ Song Mode goes beyond a prior and is a **separate, explicitly enabled operating 
 - Position follows the player (attacks, timing against score distances, pitch verdicts, re-alignment), not a fixed clock. Repeats are unrolled off the audio thread. The timeline is an immutable array handed to the audio thread by pointer and freed only after the audio thread has acknowledged a newer one.
 - Report Song Mode with its costs: wrong notes (first Note On wrong, corrections), re-alignments and retractions, next to the latency, against Free mode on the same signal (`bass2midi_songmode_eval`). Include deviations from the score (variations, skipped notes, ghost notes, wrong start).
 - Free mode stays the default and must remain unchanged by Song Mode code (verify with the full baseline).
+
+### Bar playback and live score follower (opt-in)
+
+See `docs/score-follower.md`.
+
+**Bar playback** (`Mode::bar`) is an explicitly enabled sequencer mode, owner-requested: the player plays a bar's
+root and Bass2MIDI plays all written notes of that bar, including fills the player omits. Rules:
+- Each bar is started only by a player attack in the downbeat window. Never play more than the current bar
+  ahead of the player. Without a downbeat, stop after the bar.
+- The pitch path checks the roots. Repeated contradiction falls back to Free mode.
+
+**Score follower** (`ScorePositionTracker`) estimates the live song position. It uses:
+- a tempo clock armed at a start bar and BPM, started by the first played note;
+- correction by anchor notes (downbeats, strong beats, long notes, roots weighted high; fills low);
+- several weighted position hypotheses, including jump candidates.
+
+Rules:
+- It observes only and must not change MIDI output.
+- Any future use of its position for predictions follows the Song Mode rules above: player-triggered, validated by
+  the pitch path, gated by its confidence.
+- The tablature is computed off the audio thread (Guitar Pro string/fret, else minimal-movement EADG fingering).
 
 ### Score-guidance metrics
 

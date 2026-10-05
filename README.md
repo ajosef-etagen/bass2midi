@@ -67,10 +67,19 @@ libxinerama-dev libxcursor-dev libxcomposite-dev libxext-dev`), but macOS is the
 8. Optional, experimental: **Song Mode** (needs a selected song). Each bass attack immediately plays the song's
    next expected note (synthetic tests: about 5 ms instead of about 40 ms median); the normal pitch detection checks it afterwards and
    corrects wrong notes, and when the confidence drops it takes over again (Free fallback). Set **Start at bar**
-   and press **Restart here** before playing. Repeats are followed; codas/D.S. jumps are not, so restart at the
+   and press **Go to bar** before playing. Repeats are followed; codas/D.S. jumps are not, so restart at the
    right bar there. The debug view shows position, upcoming notes, confidence, tempo, predicted vs. heard note and
    the trigger delay. **Detect re-plucks of ringing notes** is experimental. See [`docs/song-mode.md`](docs/song-mode.md):
    so far measured on synthetic performances only, with known problems on real recordings (false/missed attacks).
+
+9. Optional, experimental: **Bar playback** (Mode menu). Play the bar's root on the downbeat. Bass2MIDI then plays
+   all the bar's written notes, including the fills you leave out, at your tempo. It never runs more than one bar
+   ahead without a downbeat from you. Wrong roots fall back to Free mode.
+10. **Live score follower and tablature** (needs a selected song): choose the start bar and the BPM and press
+    **Go to bar**, then open **Show tablature**. The clock starts with your first note. Your roots correct the
+    position and tempo, and fills the score does not have are ignored. The window shows the bass part as EADG
+    tablature with the current position, BPM, confidence and the next notes. It only displays; MIDI output is
+    unchanged. See [`docs/score-follower.md`](docs/score-follower.md).
 
 Note names: Bass2MIDI calls MIDI 60 "C4" (scientific pitch, open low E = E1 = MIDI 28). Logic and MainStage call
 MIDI 60 "C3" by default, so the same notes appear one octave lower there (open low E = "E0"); MainStage can be
