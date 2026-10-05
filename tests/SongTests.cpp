@@ -174,3 +174,76 @@ TEST_CASE ("Song loader: truncated and foreign data fail cleanly")
         (void) song::loadSongData (corrupted, s, error);
     }
 }
+
+TEST_CASE ("Song timeline: repeats and alternate endings are unrolled into playing order (.gp and .gp5)")
+{
+    for (const auto* name : { "repeats.gp", "repeats.gp5" })
+    {
+        CAPTURE (name);
+        song::Song s;
+        std::string error;
+        REQUIRE_MESSAGE (song::loadSongFile (dataPath (name), s, error), error);
+        REQUIRE (s.masterBars.size() == 5);
+        CHECK (s.masterBars[0].repeatStart);
+        CHECK (s.masterBars[2].repeatPlays == 2);
+        CHECK (s.masterBars[2].alternateEndings == 1u);
+        CHECK (s.masterBars[3].alternateEndings == 2u);
+        CHECK (song::playingOrder (s) == std::vector<int> { 0, 1, 2, 0, 1, 3, 4 });
+
+        const auto notes = song::expectedNotes (s, 0);
+        REQUIRE (notes.size() == 7);
+        const std::vector<int> pitches { 28, 29, 30, 28, 29, 31, 32 };
+        for (std::size_t i = 0; i < notes.size(); ++i)
+        {
+            CAPTURE (i);
+            CHECK (notes[i].midiNote == pitches[i]);
+            CHECK (notes[i].startSeconds == doctest::Approx (2.0 * static_cast<double> (i))); // whole notes at 120 bpm
+            CHECK (notes[i].beat == doctest::Approx (1.0));
+        }
+        CHECK (notes[5].bar == 3);
+        // .gp: tempo drops to 60 bpm in bar 4 (written), so the last whole note lasts 4 s.
+        CHECK (notes[6].durationSeconds == doctest::Approx (std::string (name) == "repeats.gp" ? 4.0 : 2.0));
+    }
+}
+
+TEST_CASE ("Song timeline: ties merge, chords reduce to the lowest note, beats are reported")
+{
+    song::Song s;
+    std::string error;
+    REQUIRE_MESSAGE (song::loadSongFile (dataPath ("minimal.gp"), s, error), error);
+    const auto notes = song::expectedNotes (s, 1);
+    // minimal.gp bass: E1 (dotted quarter), B1 eighth tied into a quarter, triplet D2 E2 G2, G3, C2.
+    REQUIRE (notes.size() == 7);
+    CHECK (notes[1].midiNote == 35);
+    CHECK (notes[1].durationSeconds == doctest::Approx (1.5 * 60.0 / 100.0)); // eighth + tied quarter at 100 bpm
+    CHECK (notes[1].beat == doctest::Approx (2.5));
+    CHECK (notes[2].midiNote == 38);
+    CHECK (notes[2].bar == 1);
+    CHECK (notes[3].beat == doctest::Approx (1.0 + 1.0 / 3.0));
+
+    // Generated GP5 with chords: no two expected notes share a start, every one is the lowest there.
+    song::Song g;
+    REQUIRE (song::loadSongFile (dataPath ("synthetic_5.10.gp5"), g, error));
+    const auto expected = song::expectedNotes (g, 0);
+    REQUIRE (! expected.empty());
+    for (std::size_t i = 1; i < expected.size(); ++i)
+        CHECK (expected[i].startSeconds > expected[i - 1].startSeconds);
+}
+
+TEST_CASE ("Song timeline: malformed repeat structures stay bounded")
+{
+    song::Song s;
+    for (int i = 0; i < 3; ++i)
+    {
+        song::MasterBar bar;
+        bar.startQuarters = 4.0 * i;
+        bar.repeatStart = true;
+        bar.repeatPlays = 200; // absurd
+        bar.alternateEndings = i == 1 ? 0xffffffffu : 0u;
+        s.masterBars.push_back (bar);
+    }
+    const auto order = song::playingOrder (s, 1000);
+    CHECK (order.size() <= 1000);
+    CHECK (! order.empty());
+    CHECK (song::expectedNotes (s, 0).empty()); // no tracks
+}

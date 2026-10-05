@@ -1,5 +1,5 @@
 // Prints the tracks and the bass palette of a Guitar Pro (.gp / .gp5) file.
-//   bass2midi_songinfo <file> [--notes]
+//   bass2midi_songinfo <file> [--notes | --timeline]
 
 #include "bass2midi/MidiNoteUtils.h"
 #include "bass2midi/song/Song.h"
@@ -13,10 +13,11 @@ int main (int argc, char** argv)
 {
     if (argc < 2)
     {
-        std::fprintf (stderr, "usage: %s <file.gp|file.gp5> [--notes]\n", argv[0]);
+        std::fprintf (stderr, "usage: %s <file.gp|file.gp5> [--notes | --timeline]\n", argv[0]);
         return 2;
     }
     const bool listNotes = argc > 2 && std::strcmp (argv[2], "--notes") == 0;
+    const bool listTimeline = argc > 2 && std::strcmp (argv[2], "--timeline") == 0;
 
     bass2midi::song::Song song;
     std::string error;
@@ -59,6 +60,17 @@ int main (int argc, char** argv)
         for (const auto& [note, count] : counts)
             std::printf (" %s(%d)x%d", bass2midi::midi::noteName (note).c_str(), note, count);
         std::printf ("\n");
+    }
+
+    if (bass >= 0)
+    {
+        const auto timeline = bass2midi::song::expectedNotes (song, bass);
+        std::printf ("Song Mode timeline: %zu expected notes over %zu bars in playing order, %.1f s at score tempo\n",
+                     timeline.size(), bass2midi::song::playingOrder (song).size(),
+                     timeline.empty() ? 0.0 : timeline.back().startSeconds + timeline.back().durationSeconds);
+        if (listTimeline) // <seconds> <bar>.<beat> <note>
+            for (const auto& n : timeline)
+                std::printf ("T %.3f %d.%.2f %s\n", n.startSeconds, n.bar + 1, n.beat, bass2midi::midi::noteName (n.midiNote).c_str());
     }
 
     if (listNotes) // machine-readable: N <track> <bar> <start quarters> <duration quarters> <midi note> <tie>

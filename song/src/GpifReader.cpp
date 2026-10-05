@@ -81,16 +81,19 @@ namespace bass2midi::song::detail
             return q;
         }
 
-        double timeSignatureQuarters (const std::string& time)
+        void parseTimeSignature (const std::string& time, int& numerator, int& denominator)
         {
+            numerator = denominator = 4;
             const auto slash = time.find ('/');
             if (slash == std::string::npos)
-                return 4.0;
+                return;
             const int num = std::atoi (time.substr (0, slash).c_str());
             const int den = std::atoi (time.substr (slash + 1).c_str());
-            if (num <= 0 || den <= 0)
-                return 4.0;
-            return 4.0 * num / den;
+            if (num > 0 && den > 0)
+            {
+                numerator = num;
+                denominator = den;
+            }
         }
 
         bool containsNoCase (std::string haystack, std::string needle)
@@ -164,6 +167,20 @@ namespace bass2midi::song::detail
             for (const auto* masterBar : masterBars->childrenNamed ("MasterBar"))
             {
                 barStartQuarters.push_back (barStart);
+                MasterBar info;
+                info.startQuarters = barStart;
+                parseTimeSignature (masterBar->childText ("Time"), info.numerator, info.denominator);
+                info.lengthQuarters = 4.0 * info.numerator / info.denominator;
+                if (const auto* repeat = masterBar->child ("Repeat"))
+                {
+                    info.repeatStart = repeat->attribute ("start") == "true";
+                    if (repeat->attribute ("end") == "true")
+                        info.repeatPlays = std::max (2, std::atoi (repeat->attribute ("count").c_str()));
+                }
+                for (const int ending : parseIds (masterBar->childText ("AlternateEndings")))
+                    if (ending >= 1 && ending <= 32)
+                        info.alternateEndings |= 1u << (ending - 1);
+                song.masterBars.push_back (info);
                 const auto barIds = parseIds (masterBar->childText ("Bars"));
                 for (std::size_t trackIndex = 0; trackIndex < barIds.size() && trackIndex < song.tracks.size(); ++trackIndex)
                 {
@@ -230,7 +247,7 @@ namespace bass2midi::song::detail
                         }
                     }
                 }
-                barStart += timeSignatureQuarters (masterBar->childText ("Time"));
+                barStart += info.lengthQuarters;
                 ++barIndex;
             }
         song.barCount = barIndex;

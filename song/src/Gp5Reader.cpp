@@ -116,6 +116,9 @@ namespace bass2midi::song::detail
         {
             int numerator = 4;
             int denominator = 4;
+            bool repeatStart = false;
+            int repeatPlays = 0;
+            unsigned alternateEndings = 0;
         };
 
         struct TrackInfo
@@ -298,19 +301,23 @@ namespace bass2midi::song::detail
             if (m > 0)
             {
                 r.skip (1);
-                header = headers[static_cast<std::size_t> (m - 1)];
+                header = headers[static_cast<std::size_t> (m - 1)]; // time signature carries over
+                header.repeatStart = false;
+                header.repeatPlays = 0;
+                header.alternateEndings = 0;
             }
             const int flags = r.u8();
             if (flags & 0x01) header.numerator = r.i8();
             if (flags & 0x02) header.denominator = r.i8();
-            if (flags & 0x08) r.skip (1);         // repeat close count
+            header.repeatStart = (flags & 0x04) != 0;
+            if (flags & 0x08) header.repeatPlays = std::max (2, r.u8()); // total plays of the repeated section
             if (flags & 0x20)                     // marker: name, colour
             {
                 r.intByteSizeString();
                 r.skip (4);
             }
             if (flags & 0x40) r.skip (2);         // key signature root, type
-            if (flags & 0x10) r.skip (1);         // repeat alternative
+            if (flags & 0x10) header.alternateEndings = static_cast<unsigned> (r.u8()); // bitmask of endings
             if (flags & 0x03) r.skip (4);         // beam grouping
             if ((flags & 0x10) == 0) r.skip (1);
             r.skip (1);                           // triplet feel
@@ -467,6 +474,20 @@ namespace bass2midi::song::detail
         }
 
         song.barCount = measureCount;
+        double barStart = 0.0;
+        for (const auto& header : headers)
+        {
+            MasterBar bar;
+            bar.startQuarters = barStart;
+            bar.numerator = header.numerator;
+            bar.denominator = header.denominator;
+            bar.lengthQuarters = 4.0 * header.numerator / header.denominator;
+            bar.repeatStart = header.repeatStart;
+            bar.repeatPlays = header.repeatPlays;
+            bar.alternateEndings = header.alternateEndings;
+            song.masterBars.push_back (bar);
+            barStart += bar.lengthQuarters;
+        }
         std::stable_sort (song.tempos.begin(), song.tempos.end(),
                           [] (const TempoChange& a, const TempoChange& b) { return a.atQuarters < b.atQuarters; });
         for (auto& track : song.tracks)

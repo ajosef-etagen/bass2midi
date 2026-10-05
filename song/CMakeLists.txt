@@ -4,6 +4,7 @@ find_package(ZLIB REQUIRED)
 
 add_library(bass2midi_song STATIC
     src/SongLoader.cpp
+    src/SongTimeline.cpp
     src/GpifReader.cpp
     src/Gp5Reader.cpp
     src/ZipReader.cpp

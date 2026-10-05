@@ -4,6 +4,7 @@
 - synthetic_5.00.gp5 / synthetic_5.10.gp5: written with PyGuitarPro (pip install pyguitarpro, LGPL),
   used here only as an external file writer and reference parser. Its expected notes are dumped to
   synthetic_gp5_expected.csv (track,start_quarters,midi_note,tie) from PyGuitarPro's own parse.
+- repeats.gp / repeats.gp5: repeat with alternate endings, for unrolling into playing order.
 - minimal.gp: a hand-written GPIF score in a deflated ZIP, exercising rhythms, dots, tuplets, ties
   and tempo automation.
 
@@ -205,6 +206,74 @@ MINIMAL_GPIF = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 
+def repeats_gpif():
+    """Five 4/4 bars, one whole note each (E1 F1 F#1 G1 G#1): |: b0 b1 [1. b2 :|] [2. b3] b4, tempo
+    120 then 60 from bar 4. Playing order 0 1 2 0 1 3 4."""
+    bars, voices, beats, notes, masters = [], [], [], [], []
+    for i in range(5):
+        bars.append(f'<Bar id="{i}"><Voices>{i} -1 -1 -1</Voices></Bar>')
+        voices.append(f'<Voice id="{i}"><Beats>{i}</Beats></Voice>')
+        beats.append(f'<Beat id="{i}"><Rhythm ref="0"/><Notes>{i}</Notes></Beat>')
+        notes.append(f'<Note id="{i}"><Properties><Property name="String"><String>0</String></Property>'
+                     f'<Property name="Fret"><Fret>{i}</Fret></Property></Properties></Note>')
+        extra = ''
+        if i == 0:
+            extra = '<Repeat start="true" end="false" count="0"/>'
+        if i == 2:
+            extra = '<Repeat start="false" end="true" count="2"/><AlternateEndings>1</AlternateEndings>'
+        if i == 3:
+            extra = '<AlternateEndings>2</AlternateEndings>'
+        masters.append(f'<MasterBar><Time>4/4</Time>{extra}<Bars>{i}</Bars></MasterBar>')
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+<GPIF>
+  <Score><Title><![CDATA[Repeats]]></Title><Artist><![CDATA[Bass2MIDI]]></Artist></Score>
+  <MasterTrack><Tracks>0</Tracks><Automations>
+    <Automation><Type>Tempo</Type><Bar>0</Bar><Position>0</Position><Value>120 2</Value></Automation>
+    <Automation><Type>Tempo</Type><Bar>4</Bar><Position>0</Position><Value>60 2</Value></Automation>
+  </Automations></MasterTrack>
+  <Tracks><Track id="0"><Name><![CDATA[Bass]]></Name><InstrumentSet><Type>electricBass</Type></InstrumentSet>
+    <Staves><Staff><Properties><Property name="Tuning"><Pitches>28 33 38 43</Pitches></Property></Properties></Staff></Staves></Track></Tracks>
+  <MasterBars>{''.join(masters)}</MasterBars>
+  <Bars>{''.join(bars)}</Bars>
+  <Voices>{''.join(voices)}</Voices>
+  <Beats>{''.join(beats)}</Beats>
+  <Notes>{''.join(notes)}</Notes>
+  <Rhythms><Rhythm id="0"><NoteValue>Whole</NoteValue></Rhythm></Rhythms>
+</GPIF>
+"""
+
+
+def repeats_gp5():
+    """Same structure as repeats_gpif(), written as GP5 5.10 (tempo 120 throughout)."""
+    song = gp.Song()
+    song.title = 'Repeats'
+    song.tempo = 120
+    song.tracks = []
+    song.measureHeaders = []
+    for i in range(5):
+        h = gp.MeasureHeader(number=i + 1)
+        if i == 0:
+            h.isRepeatOpen = True
+        if i == 2:
+            h.repeatClose = 1          # PyGuitarPro: number of repeats (written as 2 plays)
+            h.repeatAlternative = 1    # bitmask: ending 1
+        if i == 3:
+            h.repeatAlternative = 2    # bitmask: ending 2
+        song.measureHeaders.append(h)
+    track = gp.Track(song, number=1, name='Bass')
+    track.strings = [gp.GuitarString(i + 1, v) for i, v in enumerate([43, 38, 33, 28])]
+    track.channel = gp.MidiChannel(channel=0, effectChannel=1, instrument=33)
+    track.measures = []
+    for i, h in enumerate(song.measureHeaders):
+        m = gp.Measure(track, h)
+        b = gp.Beat(m.voices[0], duration=gp.Duration(value=1), status=gp.BeatStatus.normal)
+        b.notes.append(gp.Note(b, value=i, string=4, type=gp.NoteType.normal))
+        m.voices[0].beats.append(b)
+        track.measures.append(m)
+    song.tracks.append(track)
+    return song
+
+
 def main():
     with open('synthetic_gp5_expected.csv', 'w') as out:
         out.write('version,track,start_quarters,midi_note,tie\n')
@@ -213,6 +282,10 @@ def main():
             gp.write(build_gp5(7), path, version=version)
             for row in expected_notes(path):
                 out.write(f'{name},{row[0]},{row[1]:.4f},{row[2]},{row[3]}\n')
+    with zipfile.ZipFile('repeats.gp', 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('VERSION', '7.0')
+        z.writestr('Content/score.gpif', repeats_gpif())
+    gp.write(repeats_gp5(), 'repeats.gp5', version=(5, 1, 0))
     with zipfile.ZipFile('minimal.gp', 'w', zipfile.ZIP_DEFLATED) as z:
         z.writestr('VERSION', '7.0')
         z.writestr('Content/score.gpif', MINIMAL_GPIF)

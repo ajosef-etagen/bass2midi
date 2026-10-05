@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bass2midi/ExpectedNote.h"
 #include "bass2midi/NotePalette.h"
 
 #include <string>
@@ -28,6 +29,18 @@ namespace bass2midi::song
         std::vector<Note> notes;
     };
 
+    // One bar of the written score (shared by all tracks), with the repeat structure needed to
+    // unroll it into playing order. Codas, segnos and D.C./D.S. jumps are not represented.
+    struct MasterBar
+    {
+        double startQuarters = 0.0;     // written position
+        double lengthQuarters = 4.0;
+        int numerator = 4, denominator = 4;
+        bool repeatStart = false;
+        int repeatPlays = 0;            // > 0: a repeat closes after this bar, played this many times in total
+        unsigned alternateEndings = 0;  // bit k set: bar belongs to ending k+1 (0 = always played)
+    };
+
     struct TempoChange
     {
         double atQuarters = 0.0;
@@ -39,6 +52,7 @@ namespace bass2midi::song
         std::string title, artist;
         std::string format;             // "gp" (Guitar Pro 7/8) or "gp5" (Guitar Pro 5)
         int barCount = 0;
+        std::vector<MasterBar> masterBars;
         std::vector<Track> tracks;
         std::vector<TempoChange> tempos;
     };
@@ -55,4 +69,14 @@ namespace bass2midi::song
 
     // Palette of all attacked notes of a track (tie continuations add nothing new).
     NotePalette paletteFromTrack (const Track& track);
+
+    // Written bar indices in playing order: simple repeats (with a play count) and alternate endings
+    // are unrolled; nested repeats, codas, segnos and D.C./D.S. are not interpreted. At most
+    // maxBars entries (guards against malformed repeat structures).
+    std::vector<int> playingOrder (const Song& song, int maxBars = 20000);
+
+    // The expected-note timeline of a track for Song Mode (see bass2midi/ExpectedNote.h): playing
+    // order, tempo map applied, tied continuations merged into their note, simultaneous attacks
+    // reduced to the lowest note, grace notes (no metric time) dropped.
+    std::vector<ExpectedNote> expectedNotes (const Song& song, int track);
 }
