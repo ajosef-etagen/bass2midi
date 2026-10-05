@@ -149,6 +149,7 @@ namespace bass2midi
         diagnostics.confidence = follower.getConfidence();
         diagnostics.tempoRatio = follower.getTempoRatio();
         diagnostics.corrections = noteMachine.getPredictionCorrections();
+        diagnostics.paletteDelayed = noteMachine.getPaletteDelayedDecisions();
         diagnostics.matches = follower.getMatches();
         diagnostics.mismatches = follower.getMismatches();
         diagnostics.resyncs = follower.getResyncs();

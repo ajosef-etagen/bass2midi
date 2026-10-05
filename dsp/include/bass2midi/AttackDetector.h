@@ -81,6 +81,14 @@ namespace bass2midi
         // the expected note in Song Mode); 0 disables the periodicity function.
         void setPeriodSamples (double periodSamples) noexcept;
 
+        // Real-time safe. Switches the periodicity function (see Settings::usePeriodicity).
+        void setUsePeriodicity (bool enabled) noexcept
+        {
+            settings.usePeriodicity = enabled;
+            if (! enabled)
+                periodSamples = 0;
+        }
+
         // Real-time safe. Follows the note gate of the state machine.
         void setGateDbfs (double gateDbfs) noexcept { if (std::isfinite (gateDbfs) && gateDbfs <= 0.0) settings.gateDbfs = gateDbfs; }
 

@@ -46,6 +46,9 @@ private:
     void removeSelectedSong();
     void stepSong (int delta);
     void saveSongState();
+    void songModeChanged();
+    void restartAtBar();
+    juce::String songModeText (const AudioEngine::Snapshot& s) const;
     int selectedSongIndex() const { return songBox.getSelectedId() - songIdOffset; } // -1 = Free mode
 
     juce::PropertiesFile& settings;
@@ -75,6 +78,12 @@ private:
     juce::Label trackLabel { {}, "Bass track:" };
     juce::ComboBox trackBox;
     juce::Label paletteLabel;
+    juce::ToggleButton songModeToggle { "Song Mode: a bass attack plays the song's next note at once" };
+    juce::ToggleButton repluckToggle { "Detect re-plucks of ringing notes (experimental)" };
+    juce::Label startBarLabel { {}, "Start at bar:" };
+    juce::Slider startBarSlider { juce::Slider::IncDecButtons, juce::Slider::TextBoxLeft };
+    juce::TextButton restartButton { "Restart here" };
+    std::vector<bass2midi::ExpectedNote> songTimeline; // message-thread copy of what the engine follows
     std::unique_ptr<juce::FileChooser> songChooser;
 
     juce::TextButton testNoteButton { "Test note (MIDI 48)" };

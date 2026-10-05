@@ -14,6 +14,8 @@ namespace
     constexpr const char* transposeKey = "transposeSemitones";
     constexpr const char* songLibraryKey = "songLibrary";
     constexpr const char* selectedSongKey = "selectedSong";
+    constexpr const char* songModeKey = "songMode";
+    constexpr const char* repluckKey = "repluckDetection";
 }
 
 MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (settingsToUse)
@@ -95,6 +97,18 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     for (auto* c : std::initializer_list<juce::Component*> { &songLabel, &songBox, &previousSongButton, &nextSongButton,
                                                              &addSongsButton, &removeSongButton, &trackLabel, &trackBox, &paletteLabel })
         addAndMakeVisible (*c);
+    songModeToggle.setToggleState (settings.getBoolValue (songModeKey, false), juce::dontSendNotification);
+    songModeToggle.onClick = [this] { songModeChanged(); };
+    repluckToggle.setToggleState (settings.getBoolValue (repluckKey, false), juce::dontSendNotification);
+    repluckToggle.onClick = [this] { songModeChanged(); };
+    repluckToggle.setTooltip ("Finds plucks of a still-ringing string (repeated notes) from the break in periodicity. "
+                              "Clearly better on synthetic tests, but more false triggers on the first real recordings.");
+    startBarSlider.setRange (1.0, 1.0, 1.0);
+    startBarSlider.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 50, 24);
+    startBarLabel.setJustificationType (juce::Justification::centredRight);
+    restartButton.onClick = [this] { restartAtBar(); };
+    for (auto* c : std::initializer_list<juce::Component*> { &songModeToggle, &repluckToggle, &startBarLabel, &startBarSlider, &restartButton })
+        addAndMakeVisible (*c);
     refreshSongControls();
     {
         const juce::File selected (settings.getValue (selectedSongKey));
@@ -103,6 +117,7 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
                 songBox.setSelectedId (songIdOffset + i, juce::dontSendNotification);
     }
     songChosen();
+    songModeChanged();
 
     testNoteButton.onClick = [this] { sendTestNote(); };
     testNoteButton.setEnabled (midiSender.isOpen());
@@ -110,7 +125,7 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     addAndMakeVisible (testNoteButton);
     addAndMakeVisible (resetStatsButton);
 
-    setSize (680, 960);
+    setSize (720, 1120);
     startTimerHz (20);
 }
 
@@ -249,9 +264,87 @@ void MainComponent::applySongPalette()
     }
 
     engine.setPalette (palette);
+
+    // Song Mode timeline (playing order, repeats unrolled). Free mode or an unusable song: empty.
+    songTimeline.clear();
+    if (index >= 0 && songs[index].usable())
+        songTimeline = bass2midi::song::expectedNotes (songs[index].song, songs[index].track);
+    engine.setSongTimeline (songTimeline);
+    const int bars = index >= 0 ? juce::jmax (1, songs[index].song.barCount) : 1;
+    startBarSlider.setRange (1.0, (double) bars, 1.0);
+    startBarSlider.setValue (1.0, juce::dontSendNotification);
+    songModeToggle.setEnabled (! songTimeline.empty());
+    repluckToggle.setEnabled (! songTimeline.empty());
+    startBarSlider.setEnabled (! songTimeline.empty());
+    restartButton.setEnabled (! songTimeline.empty());
+
     paletteLabel.setText (text, juce::dontSendNotification);
     paletteLabel.setTooltip (text);
     saveSongState();
+}
+
+void MainComponent::songModeChanged()
+{
+    engine.setSongMode (songModeToggle.getToggleState());
+    engine.setRepluckDetection (repluckToggle.getToggleState());
+    settings.setValue (songModeKey, songModeToggle.getToggleState());
+    settings.setValue (repluckKey, repluckToggle.getToggleState());
+}
+
+void MainComponent::restartAtBar()
+{
+    // First expected note at or after the chosen written bar (its first occurrence in playing order).
+    const int bar = (int) startBarSlider.getValue() - 1;
+    int index = 0;
+    for (int i = 0; i < (int) songTimeline.size(); ++i)
+        if (songTimeline[(size_t) i].bar >= bar)
+        {
+            index = i;
+            break;
+        }
+    engine.setSongPosition (index);
+}
+
+juce::String MainComponent::songModeText (const AudioEngine::Snapshot& s) const
+{
+    juce::String text;
+    const auto name = [] (int note) { return note >= 0 ? juce::String (bass2midi::midi::noteName (note)) : juce::String ("-"); };
+    text << "Song Mode\n";
+    if (songTimeline.empty())
+        return text << "  off            no song selected (Free mode)\n";
+    if (! songModeToggle.getToggleState())
+        text << "  off            Free mode (" << (int) songTimeline.size() << " notes ready)\n";
+    else
+        text << "  on             " << (! s.songActive ? juce::String ("waiting for the audio device")
+                                      : s.songConfidence >= 0.5 ? juce::String ("following, predicting")
+                                                                : juce::String ("following, confidence too low: Free fallback")) << "\n";
+
+    const int position = juce::jlimit (0, (int) songTimeline.size(), s.songPosition);
+    if (position < (int) songTimeline.size())
+    {
+        const auto& next = songTimeline[(size_t) position];
+        text << "  position       note " << position + 1 << " of " << (int) songTimeline.size() << ", bar " << next.bar + 1
+             << " beat " << juce::String (next.beat, 2) << "\n";
+        text << "  upcoming      ";
+        const double tempo = s.songTempoRatio > 0.0 ? s.songTempoRatio : 1.0;
+        for (int i = position; i < juce::jmin ((int) songTimeline.size(), position + 4); ++i)
+        {
+            const double aheadMs = 1000.0 * (songTimeline[(size_t) i].startSeconds - next.startSeconds) / tempo;
+            text << " +" << juce::roundToInt (aheadMs) << " ms " << name (songTimeline[(size_t) i].midiNote);
+        }
+        text << "\n";
+    }
+    else
+        text << "  position       end of song\n";
+    text << "  confidence     " << juce::String (s.songConfidence, 2) << "   tempo x" << juce::String (s.songTempoRatio, 2) << " of the score\n"
+         << "  last attack    velocity " << s.lastAttackVelocity << " (" << s.attackCount << " attacks)\n"
+         << "  predicted      " << name (s.lastPredictedNote) << "   pitch path heard " << name (s.lastValidatedNote)
+         << (s.lastValidationMatch == 1 ? "  (match)" : s.lastValidationMatch == 0 ? "  (MISMATCH)" : "") << "\n"
+         << "  trigger delay  " << (s.lastTriggerLatencyMs >= 0.0 ? juce::String (s.lastTriggerLatencyMs, 1) + " ms" : juce::String ("-"))
+         << " attack detected -> MIDI out\n"
+         << "  counts         " << s.predictions << " predicted, " << s.corrections << " corrected, " << s.resyncs << " re-aligned, "
+         << s.extraAttacks << " extra, " << s.ghostAttacks << " ghost, " << s.unpitchedAttacks << " unpitched\n";
+    return text;
 }
 
 void MainComponent::addSongs()
@@ -404,7 +497,9 @@ void MainComponent::timerCallback()
                                        : s.paletteSize > 0 ? juce::String (s.paletteSize) + " notes in use"
                                                            : juce::String ("none (Free mode)")) << "\n"
          << "  early frames   " << s.paletteRelievedFrames << " (decided sooner thanks to the palette)\n"
-         << "  delayed notes  " << s.paletteDelayed << " (off-palette, needed extra confirmation)\n";
+         << "  delayed notes  " << s.paletteDelayed << " (off-palette, needed extra confirmation)\n"
+         << songModeText (s);
+    engine.releaseRetiredTimelines();
 
     diagnostics.setText (text, juce::dontSendNotification);
 }
@@ -453,6 +548,14 @@ void MainComponent::resized()
     trackBox.setBounds (trackRow.removeFromLeft (300));
     area.removeFromTop (2);
     paletteLabel.setBounds (area.removeFromTop (24));
+    area.removeFromTop (4);
+    songModeToggle.setBounds (area.removeFromTop (26));
+    repluckToggle.setBounds (area.removeFromTop (26).withTrimmedLeft (24));
+    auto startRow = area.removeFromTop (28);
+    startBarLabel.setBounds (startRow.removeFromLeft (100));
+    startBarSlider.setBounds (startRow.removeFromLeft (140));
+    startRow.removeFromLeft (8);
+    restartButton.setBounds (startRow.removeFromLeft (120));
     area.removeFromTop (8);
     midiStatus.setBounds (area.removeFromTop (24));
 

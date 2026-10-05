@@ -18,10 +18,10 @@ V1 is delivered as a **standalone macOS app** that opens the audio interface its
 
 | Path | Contents | Depends on |
 | --- | --- | --- |
-| `dsp/` | Real-time DSP core (`bass2midi_dsp`): framing, FFT, pitch estimators, later onset/validation/state machine | C++20 only, no JUCE |
+| `dsp/` | Real-time DSP core (`bass2midi_dsp`): framing, FFT, pitch tracking, attack detection, note state machine, Song Mode follower, `BassToMidiProcessor` (the full chain used by app and evaluation) | C++20 only, no JUCE |
 | `song/` | Guitar Pro song files (.gp, .gp5) → tracks, notes, song palette (non-real-time) | `dsp/`, zlib |
 | `app/` | Standalone JUCE app: audio device, virtual MIDI port, sender thread, song list, diagnostics UI | JUCE 8, `dsp/`, `song/` |
-| `eval/` | Offline evaluation: synthetic corpus, reference setups, `bass2midi_baseline` tool | `dsp/` |
+| `eval/` | Offline evaluation: synthetic corpus, reference setups, `bass2midi_baseline`, `bass2midi_songmode_eval` | `dsp/`, `song/` |
 | `tests/` | doctest unit tests (`bass2midi_tests`), generated song fixtures in `tests/data/` | `dsp/`, `eval/`, `song/` |
 | `docs/` | Design notes and versioned evaluation results | - |
 
@@ -33,6 +33,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ./build/bass2midi_baseline --out docs/baseline/<name>   # full corpus, ~90 s; --quick for a subset
 ./build/bass2midi_baseline --palette --out docs/baseline/<name>   # Free vs. song-palette study
+./build/bass2midi_songmode_eval --out docs/baseline/<name>        # Free vs. Song Mode on synthetic performances
 ```
 
 ## Scope
@@ -166,6 +167,17 @@ Supported guidance levels, in increasing order of specificity:
 - Song palette mode should be implemented before timeline-guided mode because it needs no tempo/transport synchronization and already provides substantial octave-error suppression.
 - Timeline-guided mode must specify its synchronization source (host transport, MainStage control, internal clock, or external MIDI clock), count-in/start behavior, tempo changes, song-position jumps, loops, and fallback behavior when transport is unavailable.
 - Expose a clearly visible bypass/fallback to Free mode. A failed or missing score must never prevent ordinary audio-to-MIDI operation.
+
+### Song Mode (score-triggered notes, opt-in)
+
+Song Mode goes beyond a prior and is a **separate, explicitly enabled operating mode** (see `docs/song-mode.md`). A detected bass attack triggers the song's expected next note at once, before the pitch is known. It exists for the latency gain. Pitch detection cannot beat about one period of the note plus analysis time, whereas an attack can be seen in about 1–3 ms. Rules:
+
+- A MIDI note is only ever emitted in response to an acoustic event of the player: an attack, or a pitch-path decision. Never autoplay the score or advance it on a clock.
+- The pitch path always runs. It validates every predicted note afterwards and corrects a contradicted one (Note Off + Note On). The correction rule and its timing are named parameters with tests.
+- Predictions are gated by an explicit position confidence. Below the threshold, Free-mode pitch detection decides. Unpitched attacks (dead notes) are retracted.
+- Position follows the player (attacks, timing against score distances, pitch verdicts, re-alignment), not a fixed clock. Repeats are unrolled off the audio thread. The timeline is an immutable array handed to the audio thread by pointer and freed only after the audio thread has acknowledged a newer one.
+- Report Song Mode with its costs: wrong notes (first Note On wrong, corrections), re-alignments and retractions, next to the latency, against Free mode on the same signal (`bass2midi_songmode_eval`). Include deviations from the score (variations, skipped notes, ghost notes, wrong start).
+- Free mode stays the default and must remain unchanged by Song Mode code (verify with the full baseline).
 
 ### Score-guidance metrics
 

@@ -64,6 +64,13 @@ libxinerama-dev libxcursor-dev libxcomposite-dev libxext-dev`), but macOS is the
    (picked automatically). The palette line shows the notes Bass2MIDI now expects. **Free (no song guidance)** is
    the default and always one click away; a missing or unreadable file also means Free mode. The list and the
    selection are saved. Guidance is soft: notes outside the song are delayed slightly, never suppressed.
+8. Optional, experimental: **Song Mode** (needs a selected song). Each bass attack immediately plays the song's
+   next expected note (synthetic tests: about 5 ms instead of about 40 ms median); the normal pitch detection checks it afterwards and
+   corrects wrong notes, and when the confidence drops it takes over again (Free fallback). Set **Start at bar**
+   and press **Restart here** before playing. Repeats are followed; codas/D.S. jumps are not, so restart at the
+   right bar there. The debug view shows position, upcoming notes, confidence, tempo, predicted vs. heard note and
+   the trigger delay. **Detect re-plucks of ringing notes** is experimental. See [`docs/song-mode.md`](docs/song-mode.md):
+   so far measured on synthetic performances only, with known problems on real recordings (false/missed attacks).
 
 Note names: Bass2MIDI calls MIDI 60 "C4" (scientific pitch, open low E = E1 = MIDI 28). Logic and MainStage call
 MIDI 60 "C3" by default, so the same notes appear one octave lower there (open low E = "E0"); MainStage can be

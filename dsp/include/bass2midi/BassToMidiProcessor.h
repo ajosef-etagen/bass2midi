@@ -82,6 +82,7 @@ namespace bass2midi
             PitchCandidate pitch;           // latest frame
             int rungWindowSamples = 0;
             bool paletteRelieved = false;
+            int paletteDelayed = 0;         // decisions the palette postponed (off-palette notes)
             int soundingPlayedNote = -1, soundingOutputNote = -1, lastVelocity = 0;
             // Attacks
             std::int64_t lastAttackSample = -1;
@@ -114,6 +115,13 @@ namespace bass2midi
         // acknowledged the swap). Resets the position to 0.
         void setTimeline (const ExpectedNote* notes, int count) noexcept;
         void setSongPosition (int index) noexcept;
+        // Real-time safe. Re-pluck detection of ringing notes via the periodicity break (experimental,
+        // see AttackDetector).
+        void setPeriodicityEnabled (bool enabled) noexcept
+        {
+            settings.attacks.usePeriodicity = enabled;
+            attackDetector.setUsePeriodicity (enabled);
+        }
 
         // Real-time safe. Appends events to `out` (stops when full).
         void process (const float* samples, int numSamples, Output& out) noexcept;

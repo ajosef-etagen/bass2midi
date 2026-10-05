@@ -1,42 +1,42 @@
 #pragma once
 
-#include "bass2midi/AnalysisFramer.h"
+#include "bass2midi/BassToMidiProcessor.h"
+#include "bass2midi/ExpectedNote.h"
 #include "bass2midi/NotePalette.h"
-#include "bass2midi/NoteStateMachine.h"
-#include "bass2midi/MultiResolutionPitchTracker.h"
 
 #include <juce_audio_devices/juce_audio_devices.h>
 
 #include <atomic>
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 class MidiOutputSender;
 
-// Audio-device callback: runs pitch analysis and the note state machine on one selected active
-// input channel, and hands the resulting MIDI events to the MidiOutputSender.
+// Audio-device callback: runs the BassToMidiProcessor (the same chain as the offline evaluation)
+// on one selected active input channel and hands the resulting MIDI events to the MidiOutputSender.
 //
-// Pipeline per analysis frame: MultiResolutionPitchTracker (pitch-adaptive YIN windows over the V1
-// range) -> NoteStateMachine -> lock-free MIDI FIFO.
+// Free mode: MultiResolutionPitchTracker -> NoteStateMachine. Song Mode (a song timeline is set
+// and enabled): additionally, bass attacks trigger the expected note of the song at once (see
+// BassToMidiProcessor / SongFollower); the pitch path validates and corrects.
 //
 // Real-time rules: audioDeviceIOCallbackWithContext never allocates, locks, logs or touches the
 // UI. User settings arrive through atomics and are applied at block start; everything the UI shows
 // is published through relaxed atomics, read by a message-thread timer.
 //
 // Cross-thread boundaries:
-//  - message thread -> audio thread: setAnalysedChannel, setMidiSettings (atomics + version counter),
-//    setPalette (two 64-bit words under a sequence counter; a torn read is skipped and retried
-//    at the next block, never waited for)
+//  - message thread -> audio thread: setAnalysedChannel, setMidiSettings (atomics + version
+//    counter), setPalette (two 64-bit words under a sequence counter; a torn read is skipped and
+//    retried at the next block, never waited for), setSongTimeline (atomic pointer to an immutable
+//    timeline; the old one is freed on the message thread only after the audio thread has
+//    acknowledged the new one), setSongMode, setSongPosition (atomics)
 //  - audio thread -> sender thread: MidiOutputSender::pushFromAudioThread (SPSC FIFO)
 //  - audio thread -> message thread: Snapshot atomics
 class AudioEngine final : public juce::AudioIODeviceCallback
 {
 public:
-    // Analysis: MultiResolutionPitchTracker defaults (38-420 Hz) and a 2.5 ms hop - the same as the
-    // offline "multires-yin+nsm" setup, so live behaviour matches the evaluation report.
-    static constexpr double analysisHopSeconds = 0.0025;
-    static constexpr double onsetSettleWindowFraction = 0.75; // of the analysis window, see NoteStateMachine
-
     explicit AudioEngine (MidiOutputSender& sender);
+    ~AudioEngine() override;
 
     struct Snapshot
     {
@@ -56,8 +56,18 @@ public:
         int lastVelocity = 0;
         int noteOnCount = 0;     // since start, for the UI
         int paletteSize = 0;     // notes in the applied song palette, 0 = Free mode
-        int paletteDelayed = 0;  // decisions the palette postponed (off-palette notes), since start
         int paletteRelievedFrames = 0; // frames decided early thanks to the palette, since start
+        int paletteDelayed = 0;  // decisions the palette postponed (off-palette notes), since start
+
+        // Song Mode
+        bool songActive = false;
+        int songPosition = 0;            // index of the next expected note
+        int songNoteCount = 0;
+        double songConfidence = 0.0, songTempoRatio = 1.0;
+        int attackCount = 0, lastAttackVelocity = 0;
+        int lastPredictedNote = -1, lastValidatedNote = -1, lastValidationMatch = -1;
+        double lastTriggerLatencyMs = -1.0; // attack detection -> MIDI queued (block end)
+        int predictions = 0, corrections = 0, resyncs = 0, extraAttacks = 0, ghostAttacks = 0, unpitchedAttacks = 0;
     };
 
     // Message thread.
@@ -76,6 +86,18 @@ public:
     // Applied by the audio thread at the next block; a sounding note is never ended by it.
     void setPalette (const bass2midi::NotePalette& palette) noexcept;
 
+    // Message thread. The song's expected-note timeline for Song Mode (empty = none). Copied; the
+    // audio thread switches at the next block and restarts at note 0.
+    void setSongTimeline (std::vector<bass2midi::ExpectedNote> notes);
+    // Message thread. Song Mode on/off (needs a timeline to have an effect).
+    void setSongMode (bool enabled) noexcept { pendingSongMode.store (enabled); }
+    // Message thread. Experimental re-pluck detection for Song Mode (periodicity break).
+    void setRepluckDetection (bool enabled) noexcept { pendingRepluck.store (enabled); }
+    // Message thread. The next attack is expected to be timeline note `index`.
+    void setSongPosition (int index) noexcept { pendingSongPosition.store (juce::jmax (0, index)); }
+    // Message thread. Frees timelines the audio thread no longer uses (call from a timer).
+    void releaseRetiredTimelines();
+
     // Message thread. Highest absolute sample value of the analysed channel since the last call.
     float takeInputPeakLinear() noexcept { return inputPeakLinear.exchange (0.0f); }
     void resetCallbackStats() noexcept { resetStatsRequested.store (true); }
@@ -87,20 +109,24 @@ public:
                                            int numSamples, const juce::AudioIODeviceCallbackContext& context) override;
 
 private:
+    struct Timeline
+    {
+        std::vector<bass2midi::ExpectedNote> notes;
+    };
+
     void applyPendingSettings() noexcept;
     void applyPendingPalette() noexcept;
-    void handleFrame (const float* window) noexcept;
-    void sendEvents (const bass2midi::NoteStateMachine::Output& output) noexcept;
+    void applyPendingSong() noexcept;
+    void send (const bass2midi::BassToMidiProcessor::Output& output) noexcept;
+    void publishDiagnostics() noexcept;
 
     MidiOutputSender& midiSender;
 
-    bass2midi::AnalysisFramer framer;
-    bass2midi::MultiResolutionPitchTracker tracker;
-    bass2midi::NoteStateMachine noteMachine;
-    bass2midi::NoteStateMachine::Settings noteSettings; // audio thread copy (frame timing set at device start)
+    bass2midi::BassToMidiProcessor processor;
     bool analysisReady = false;
     bool outputEnabled = true;
     int appliedSettingsVersion = -1;
+    int appliedMidiChannel = 1;
 
     std::atomic<int> requestedChannel { 0 };
     std::atomic<float> inputPeakLinear { 0.0f };
@@ -117,12 +143,29 @@ private:
     std::uint32_t appliedPaletteSequence = 0; // audio thread
     bool forcePaletteApply = true;            // audio thread (set in audioDeviceAboutToStart)
 
+    // Song Mode. Timelines are owned by the message thread (`timelines`); the audio thread only
+    // reads the one published in pendingTimeline and reports the one it uses in appliedTimeline.
+    std::vector<std::unique_ptr<Timeline>> timelines;  // message thread
+    std::atomic<const Timeline*> pendingTimeline { nullptr };
+    std::atomic<const Timeline*> appliedTimeline { nullptr };
+    const Timeline* currentTimeline = nullptr;          // audio thread
+    bool forceTimelineApply = true;                     // audio thread
+    std::atomic<bool> pendingSongMode { false };
+    std::atomic<bool> pendingRepluck { false };
+    std::atomic<int> pendingSongPosition { -1 };
+
+    // Snapshot.
     std::atomic<bool> lastValid { false };
     std::atomic<double> lastFrequencyHz { 0.0 }, lastClarity { 0.0 }, lastRmsLinear { 0.0 };
     std::atomic<double> sampleRateHz { 0.0 };
     std::atomic<int> blockSize { 0 }, windowSamples { 0 }, hopSamples { 0 }, lastRungWindowSamples { 0 };
     std::atomic<int> soundingNote { -1 }, playedNote { -1 }, lastVelocity { 0 }, noteOnCount { 0 };
     std::atomic<int> paletteSize { 0 }, paletteRelievedFrames { 0 }, paletteDelayed { 0 };
+    std::atomic<bool> songActive { false };
+    std::atomic<int> songPosition { 0 }, songNoteCount { 0 }, attackCount { 0 }, lastAttackVelocity { 0 };
+    std::atomic<int> lastPredictedNote { -1 }, lastValidatedNote { -1 }, lastValidationMatch { -1 };
+    std::atomic<double> songConfidence { 0.0 }, songTempoRatio { 1.0 }, lastTriggerLatencyMs { -1.0 };
+    std::atomic<int> predictions { 0 }, corrections { 0 }, resyncs { 0 }, extraAttacks { 0 }, ghostAttacks { 0 }, unpitchedAttacks { 0 };
 
     // Callback cost, measured with the high-resolution tick counter (lock- and allocation-free).
     std::atomic<std::int64_t> worstCallbackTicks { 0 }, totalCallbackTicks { 0 }, callbackCount { 0 };

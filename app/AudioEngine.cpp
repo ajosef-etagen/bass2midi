@@ -1,9 +1,12 @@
 #include "AudioEngine.h"
 #include "MidiOutputSender.h"
 
+#include <algorithm>
 #include <cmath>
 
 AudioEngine::AudioEngine (MidiOutputSender& sender) : midiSender (sender) {}
+
+AudioEngine::~AudioEngine() = default;
 
 void AudioEngine::setMidiSettings (bool enabled, int midiChannel, double gateOpenDbfs, int transposeSemitones) noexcept
 {
@@ -23,6 +26,28 @@ void AudioEngine::setPalette (const bass2midi::NotePalette& palette) noexcept
     paletteSequence.fetch_add (1);
 }
 
+void AudioEngine::setSongTimeline (std::vector<bass2midi::ExpectedNote> notes)
+{
+    auto timeline = std::make_unique<Timeline>();
+    timeline->notes = std::move (notes);
+    pendingTimeline.store (timeline.get());
+    timelines.push_back (std::move (timeline));
+    releaseRetiredTimelines();
+}
+
+void AudioEngine::releaseRetiredTimelines()
+{
+    // `timelines` is in publication order. The audio thread may still load anything published at or
+    // after the timeline it last acknowledged (appliedTimeline), but never anything before it - so
+    // only those older entries are freed. (Freeing by "neither pending nor applied" would race with
+    // an audio thread that has just loaded a pointer that is being replaced.)
+    const auto* applied = appliedTimeline.load();
+    const auto it = std::find_if (timelines.begin(), timelines.end(),
+                                  [applied] (const std::unique_ptr<Timeline>& t) { return t.get() == applied; });
+    if (it != timelines.end())
+        timelines.erase (timelines.begin(), it);
+}
+
 void AudioEngine::applyPendingPalette() noexcept
 {
     const auto before = paletteSequence.load();
@@ -37,32 +62,49 @@ void AudioEngine::applyPendingPalette() noexcept
 
     appliedPaletteSequence = before;
     forcePaletteApply = false;
-    tracker.setPalette (palette);
-    noteMachine.setPalette (palette);
+    processor.setPalette (palette);
     paletteSize.store (palette.size(), std::memory_order_relaxed);
+}
+
+void AudioEngine::applyPendingSong() noexcept
+{
+    const auto* pending = pendingTimeline.load();
+    if (pending != currentTimeline || forceTimelineApply)
+    {
+        currentTimeline = pending;
+        forceTimelineApply = false;
+        if (pending != nullptr)
+            processor.setTimeline (pending->notes.data(), (int) pending->notes.size());
+        else
+            processor.setTimeline (nullptr, 0);
+        appliedTimeline.store (pending);
+    }
+
+    processor.setMode (pendingSongMode.load (std::memory_order_relaxed) ? bass2midi::BassToMidiProcessor::Mode::song
+                                                                         : bass2midi::BassToMidiProcessor::Mode::free);
+
+    processor.setPeriodicityEnabled (pendingRepluck.load (std::memory_order_relaxed));
+
+    const auto position = pendingSongPosition.exchange (-1);
+    if (position >= 0)
+        processor.setSongPosition (position);
 }
 
 void AudioEngine::audioDeviceAboutToStart (juce::AudioIODevice* device)
 {
     // Called before callbacks start (not concurrently with them), so allocation is allowed here.
     const auto rate = device->getCurrentSampleRate();
-    const auto hop = juce::jmax (1, (int) std::lround (rate * analysisHopSeconds));
+    analysisReady = processor.prepare (rate, {});
 
-    analysisReady = tracker.prepare (rate, {}) && framer.prepare (tracker.getFrameSamples(), hop);
-    forcePaletteApply = true; // the tracker was re-prepared: hand it the current palette again
-    const int frameSamples = tracker.getFrameSamples();
-
-    // Frame timing of the state machine follows the analysis framing at this sample rate.
-    noteSettings.frameIntervalSeconds = (double) hop / rate;
-    noteSettings.onsetSettleMs = onsetSettleWindowFraction * 1000.0 * (double) frameSamples / rate;
-    noteMachine.reset();
-    appliedSettingsVersion = -1; // re-apply user settings on the first block
+    forcePaletteApply = true;   // the processor was re-prepared: hand it palette, timeline and
+    forceTimelineApply = true;  // settings again
+    appliedSettingsVersion = -1;
     soundingNote.store (-1);
 
     sampleRateHz.store (rate);
     blockSize.store (device->getCurrentBufferSizeSamples());
-    windowSamples.store (frameSamples);
-    hopSamples.store (hop);
+    windowSamples.store (processor.getFrameSamples());
+    hopSamples.store (processor.getHopSamples());
     lastValid.store (false);
     resetStatsRequested.store (true);
 }
@@ -71,7 +113,10 @@ void AudioEngine::audioDeviceStopped()
 {
     // Callbacks have stopped, so this thread is the only producer for the audio FIFO now:
     // end a sounding note so MainStage never keeps a stuck note.
-    sendEvents (noteMachine.allNotesOff());
+    bass2midi::BassToMidiProcessor::Output out;
+    processor.allNotesOff (out);
+    if (outputEnabled)
+        send (out);
     analysisReady = false;
     lastValid.store (false);
 }
@@ -84,22 +129,22 @@ void AudioEngine::applyPendingSettings() noexcept
 
     appliedSettingsVersion = version;
 
+    bass2midi::BassToMidiProcessor::Output out;
     const bool enabled = pendingOutputEnabled.load();
-    if (! enabled && outputEnabled)
-        sendEvents (noteMachine.allNotesOff());
+    const int channel = pendingMidiChannel.load();
+    if (enabled != outputEnabled || channel != appliedMidiChannel)
+    {
+        // Disabling ends the sounding note; enabling starts from silence (whatever the processor
+        // tracked while disabled was never sent, so its Note Off is dropped too). A channel change
+        // ends the note on its old channel instead of letting it hang.
+        processor.allNotesOff (out);
+        if (outputEnabled)
+            send (out);
+    }
     outputEnabled = enabled;
 
-    auto updated = noteSettings;
-    updated.midiChannel = pendingMidiChannel.load();
-    updated.gateOpenDbfs = pendingGateOpenDbfs.load();
-    updated.transposeSemitones = pendingTransposeSemitones.load();
-
-    // A channel change ends the sounding note on its old channel instead of letting it hang.
-    if (updated.midiChannel != noteSettings.midiChannel && noteMachine.getSoundingNote() >= 0)
-        sendEvents (noteMachine.allNotesOff());
-
-    if (noteMachine.setSettings (updated))
-        noteSettings = updated;
+    if (processor.setNoteSettings (channel, pendingGateOpenDbfs.load(), pendingTransposeSemitones.load()))
+        appliedMidiChannel = channel;
 }
 
 void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputChannelData, int numInputChannels,
@@ -115,6 +160,7 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
 
     applyPendingSettings();
     applyPendingPalette();
+    applyPendingSong();
 
     const int channel = juce::jmin (requestedChannel.load (std::memory_order_relaxed), numInputChannels - 1);
     const float* input = channel >= 0 ? inputChannelData[channel] : nullptr;
@@ -127,10 +173,13 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
             inputPeakLinear.store (blockPeak, std::memory_order_relaxed);
 
         if (analysisReady)
-            framer.push (input, numSamples, [this] (const float* window, std::int64_t, int)
-            {
-                handleFrame (window);
-            });
+        {
+            bass2midi::BassToMidiProcessor::Output out;
+            processor.process (input, numSamples, out);
+            if (outputEnabled)
+                send (out);
+            publishDiagnostics();
+        }
     }
 
     const auto elapsed = juce::Time::getHighResolutionTicks() - startTicks;
@@ -148,39 +197,14 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
     callbackCount.fetch_add (1, std::memory_order_relaxed);
 }
 
-void AudioEngine::handleFrame (const float* window) noexcept
-{
-    const auto estimate = tracker.estimate (window);
-    const auto& candidate = estimate.pitch;
-    lastRungWindowSamples.store (estimate.windowSamples, std::memory_order_relaxed);
-    lastValid.store (candidate.valid, std::memory_order_relaxed);
-    lastFrequencyHz.store (candidate.frequencyHz, std::memory_order_relaxed);
-    lastClarity.store (candidate.clarity, std::memory_order_relaxed);
-    if (estimate.paletteRelieved)
-        paletteRelievedFrames.fetch_add (1, std::memory_order_relaxed);
-    lastRmsLinear.store (candidate.windowRmsLinear, std::memory_order_relaxed);
-
-    if (! outputEnabled)
-        return;
-
-    // Level of the samples that are new since the previous frame (the newest hop).
-    const int windowLength = framer.getWindowSamples();
-    const int hopLength = framer.getHopSamples();
-    const auto newest = juce::FloatVectorOperations::findMinAndMax (window + (windowLength - hopLength), hopLength);
-    const auto hopPeak = juce::jmax (-newest.getStart(), newest.getEnd());
-
-    sendEvents (noteMachine.processFrame ({ candidate, (double) hopPeak }));
-}
-
-void AudioEngine::sendEvents (const bass2midi::NoteStateMachine::Output& output) noexcept
+void AudioEngine::send (const bass2midi::BassToMidiProcessor::Output& output) noexcept
 {
     for (int i = 0; i < output.count; ++i)
     {
-        const auto& e = output.events[(size_t) i];
+        const auto& e = output.events[(size_t) i].event;
         if (e.type == bass2midi::NoteEvent::Type::noteOn)
         {
             midiSender.pushFromAudioThread (MidiOutputSender::noteOn (e.channel, e.note, e.velocity));
-            lastVelocity.store (e.velocity, std::memory_order_relaxed);
             noteOnCount.fetch_add (1, std::memory_order_relaxed);
         }
         else
@@ -188,10 +212,41 @@ void AudioEngine::sendEvents (const bass2midi::NoteStateMachine::Output& output)
             midiSender.pushFromAudioThread (MidiOutputSender::noteOff (e.channel, e.note));
         }
     }
+}
 
-    soundingNote.store (noteMachine.getSoundingOutputNote(), std::memory_order_relaxed);
-    paletteDelayed.store (noteMachine.getPaletteDelayedDecisions(), std::memory_order_relaxed);
-    playedNote.store (noteMachine.getSoundingNote(), std::memory_order_relaxed);
+void AudioEngine::publishDiagnostics() noexcept
+{
+    constexpr auto relaxed = std::memory_order_relaxed;
+    const auto& d = processor.getDiagnostics();
+    lastValid.store (d.pitch.valid, relaxed);
+    lastFrequencyHz.store (d.pitch.frequencyHz, relaxed);
+    lastClarity.store (d.pitch.clarity, relaxed);
+    lastRmsLinear.store (d.pitch.windowRmsLinear, relaxed);
+    lastRungWindowSamples.store (d.rungWindowSamples, relaxed);
+    if (d.paletteRelieved)
+        paletteRelievedFrames.fetch_add (1, relaxed); // approximate: counted per block, not per frame
+    soundingNote.store (outputEnabled ? d.soundingOutputNote : -1, relaxed);
+    playedNote.store (outputEnabled ? d.soundingPlayedNote : -1, relaxed);
+    lastVelocity.store (d.lastVelocity, relaxed);
+    paletteDelayed.store (d.paletteDelayed, relaxed);
+
+    songActive.store (d.songActive, relaxed);
+    songPosition.store (d.position, relaxed);
+    songNoteCount.store (d.timelineCount, relaxed);
+    songConfidence.store (d.confidence, relaxed);
+    songTempoRatio.store (d.tempoRatio, relaxed);
+    attackCount.store (d.attackCount, relaxed);
+    lastAttackVelocity.store (d.lastAttackVelocity, relaxed);
+    lastPredictedNote.store (d.lastPredictedNote, relaxed);
+    lastValidatedNote.store (d.lastValidatedNote, relaxed);
+    lastValidationMatch.store (d.lastValidationMatch, relaxed);
+    lastTriggerLatencyMs.store (d.lastTriggerLatencySamples >= 0 ? 1000.0 * (double) d.lastTriggerLatencySamples / processor.getSampleRate() : -1.0, relaxed);
+    predictions.store (d.predictions, relaxed);
+    corrections.store (d.corrections, relaxed);
+    resyncs.store (d.resyncs, relaxed);
+    extraAttacks.store (d.extraAttacks, relaxed);
+    ghostAttacks.store (d.ghostAttacks, relaxed);
+    unpitchedAttacks.store (d.unpitchedAttacks, relaxed);
 }
 
 AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
@@ -212,8 +267,26 @@ AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
     s.lastVelocity = lastVelocity.load();
     s.noteOnCount = noteOnCount.load();
     s.paletteSize = paletteSize.load();
-    s.paletteDelayed = paletteDelayed.load();
     s.paletteRelievedFrames = paletteRelievedFrames.load();
+    s.paletteDelayed = paletteDelayed.load();
+
+    s.songActive = songActive.load();
+    s.songPosition = songPosition.load();
+    s.songNoteCount = songNoteCount.load();
+    s.songConfidence = songConfidence.load();
+    s.songTempoRatio = songTempoRatio.load();
+    s.attackCount = attackCount.load();
+    s.lastAttackVelocity = lastAttackVelocity.load();
+    s.lastPredictedNote = lastPredictedNote.load();
+    s.lastValidatedNote = lastValidatedNote.load();
+    s.lastValidationMatch = lastValidationMatch.load();
+    s.lastTriggerLatencyMs = lastTriggerLatencyMs.load();
+    s.predictions = predictions.load();
+    s.corrections = corrections.load();
+    s.resyncs = resyncs.load();
+    s.extraAttacks = extraAttacks.load();
+    s.ghostAttacks = ghostAttacks.load();
+    s.unpitchedAttacks = unpitchedAttacks.load();
 
     const auto ticksPerMs = (double) juce::Time::getHighResolutionTicksPerSecond() / 1000.0;
     const auto count = callbackCount.load();
