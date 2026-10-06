@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  dsp-linux:
+    name: DSP tests (Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build zlib1g-dev
+      - run: cmake -S . -B build -G Ninja -DBASS2MIDI_BUILD_APP=OFF
+      - run: cmake --build build
+      - run: ctest --test-dir build --output-on-failure
+      - run: ./build/bass2midi_baseline --quick --out baseline-results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: baseline-quick
+          path: baseline-results/
+
+  macos:
+    name: App + tests (macOS)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+      - run: brew install ninja
+      - run: cmake -S . -B build -G Ninja
+      - run: cmake --build build
+      - run: ctest --test-dir build --output-on-failure
+      - run: test -d build/app/Bass2MIDIApp_artefacts/Release/Bass2MIDI.app

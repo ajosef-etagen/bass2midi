@@ -1,0 +1,433 @@
+setup,scenario,sample_rate_hz,variant,first_note,second_note,emitted_note_ons,note_ons,note_offs,pass,second_latency_ms
+warf-like-yin,repeat-ringing,44100,full-fundamental,E1,E1,F1 F1 F1,3,3,0,-
+warf-like-yin,repeat-ringing,44100,weak-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,repeat-muted-30ms,44100,full-fundamental,E1,E1,F1 F1 F1,3,3,0,-
+warf-like-yin,repeat-muted-30ms,44100,weak-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,change-fourth,44100,full-fundamental,E1,A1,F1 A1,2,2,0,-
+warf-like-yin,change-fourth,44100,weak-fundamental,E1,A1,A1,1,1,0,-
+warf-like-yin,change-octave,44100,full-fundamental,E1,E2,F1 E2,2,2,0,-
+warf-like-yin,change-octave,44100,weak-fundamental,E1,E2,E2,1,1,0,-
+warf-like-yin,repeat-ringing,44100,full-fundamental,A1,A1,A1,1,1,0,-
+warf-like-yin,repeat-ringing,44100,weak-fundamental,A1,A1,A1,1,1,0,-
+warf-like-yin,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,61.77
+warf-like-yin,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,61.77
+warf-like-yin,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,61.77
+warf-like-yin,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,61.77
+warf-like-yin,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,61.77
+warf-like-yin,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,61.77
+warf-like-yin,repeat-ringing,44100,full-fundamental,D2,D2,D2,1,1,0,-
+warf-like-yin,repeat-ringing,44100,weak-fundamental,D2,D2,D2,1,1,0,-
+warf-like-yin,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,50.16
+warf-like-yin,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,50.16
+warf-like-yin,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,61.77
+warf-like-yin,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,61.77
+warf-like-yin,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,61.77
+warf-like-yin,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,61.77
+warf-like-yin,repeat-ringing,44100,full-fundamental,G2,G2,G2,1,1,0,-
+warf-like-yin,repeat-ringing,44100,weak-fundamental,G2,G2,G2,1,1,0,-
+warf-like-yin,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,61.77
+warf-like-yin,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,61.77
+warf-like-yin,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,61.77
+warf-like-yin,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,61.77
+warf-like-yin,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,61.77
+warf-like-yin,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,61.77
+warf-like-yin,repeat-ringing,44100,full-fundamental,C3,C3,C3,1,1,0,-
+warf-like-yin,repeat-ringing,44100,weak-fundamental,C3,C3,C3,1,1,0,-
+warf-like-yin,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,61.77
+warf-like-yin,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,61.77
+warf-like-yin,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,61.77
+warf-like-yin,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,61.77
+warf-like-yin,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,61.77
+warf-like-yin,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,50.16
+warf-like-yin,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+warf-like-yin,repeat-ringing,44100,weak-fundamental,G3,G3,G3,1,1,0,-
+warf-like-yin,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3,1,1,0,-
+warf-like-yin,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,61.77
+warf-like-yin,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,61.77
+warf-like-yin,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,61.77
+warf-like-yin,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,61.77
+warf-like-yin,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,61.77
+full-range-yin,repeat-ringing,44100,full-fundamental,E1,E1,E1 E1,2,2,1,53.79
+full-range-yin,repeat-ringing,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,53.79
+full-range-yin,repeat-muted-30ms,44100,full-fundamental,E1,E1,E1 E1,2,2,1,48.80
+full-range-yin,repeat-muted-30ms,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,51.29
+full-range-yin,change-fourth,44100,full-fundamental,E1,A1,E1 A1,2,2,1,51.29
+full-range-yin,change-fourth,44100,weak-fundamental,E1,A1,E1 A1,2,2,1,51.29
+full-range-yin,change-octave,44100,full-fundamental,E1,E2,E1 E2,2,2,1,53.79
+full-range-yin,change-octave,44100,weak-fundamental,E1,E2,E1 E2,2,2,1,53.79
+full-range-yin,repeat-ringing,44100,full-fundamental,A1,A1,A1 A1,2,2,1,51.29
+full-range-yin,repeat-ringing,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,51.29
+full-range-yin,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,51.29
+full-range-yin,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,51.29
+full-range-yin,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,51.29
+full-range-yin,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,48.80
+full-range-yin,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,51.29
+full-range-yin,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,51.29
+full-range-yin,repeat-ringing,44100,full-fundamental,D2,D2,D2 D2,2,2,1,51.29
+full-range-yin,repeat-ringing,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,48.80
+full-range-yin,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,46.30
+full-range-yin,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,46.30
+full-range-yin,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,53.79
+full-range-yin,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,53.79
+full-range-yin,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,51.29
+full-range-yin,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,51.29
+full-range-yin,repeat-ringing,44100,full-fundamental,G2,G2,G2 G2,2,2,1,48.80
+full-range-yin,repeat-ringing,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,51.29
+full-range-yin,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,51.29
+full-range-yin,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,48.80
+full-range-yin,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,48.80
+full-range-yin,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,51.29
+full-range-yin,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,51.29
+full-range-yin,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,53.79
+full-range-yin,repeat-ringing,44100,full-fundamental,C3,C3,C3 C3,2,2,1,51.29
+full-range-yin,repeat-ringing,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,51.29
+full-range-yin,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,48.80
+full-range-yin,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,48.80
+full-range-yin,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,51.29
+full-range-yin,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,51.29
+full-range-yin,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,51.29
+full-range-yin,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,46.30
+full-range-yin,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin,repeat-ringing,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,41.32
+full-range-yin,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3 G3,2,2,1,43.81
+full-range-yin,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,46.30
+full-range-yin,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,48.80
+full-range-yin,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,48.80
+full-range-yin,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,51.29
+full-range-yin,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,46.30
+full-range-yin+nsm,repeat-ringing,44100,full-fundamental,E1,E1,E1,1,1,0,-
+full-range-yin+nsm,repeat-ringing,44100,weak-fundamental,E1,E1,E1,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,44100,full-fundamental,E1,E1,E1 E1,2,2,1,48.80
+full-range-yin+nsm,repeat-muted-30ms,44100,weak-fundamental,E1,E1,E1 E1,2,2,1,51.29
+full-range-yin+nsm,change-fourth,44100,full-fundamental,E1,A1,E1 A1,2,2,1,58.78
+full-range-yin+nsm,change-fourth,44100,weak-fundamental,E1,A1,E1 A1,2,2,1,58.78
+full-range-yin+nsm,change-octave,44100,full-fundamental,E1,E2,E1 E2,2,2,1,91.20
+full-range-yin+nsm,change-octave,44100,weak-fundamental,E1,E2,E1 E2,2,2,1,91.20
+full-range-yin+nsm,repeat-ringing,44100,full-fundamental,A1,A1,A1,1,1,0,-
+full-range-yin+nsm,repeat-ringing,44100,weak-fundamental,A1,A1,A1,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,44100,full-fundamental,A1,A1,A1 A1,2,2,1,51.29
+full-range-yin+nsm,repeat-muted-30ms,44100,weak-fundamental,A1,A1,A1 A1,2,2,1,63.76
+full-range-yin+nsm,change-fourth,44100,full-fundamental,A1,D2,A1 D2,2,2,1,58.78
+full-range-yin+nsm,change-fourth,44100,weak-fundamental,A1,D2,A1 D2,2,2,1,56.28
+full-range-yin+nsm,change-octave,44100,full-fundamental,A1,A2,A1 A2,2,2,1,88.71
+full-range-yin+nsm,change-octave,44100,weak-fundamental,A1,A2,A1 A2,2,2,1,88.71
+full-range-yin+nsm,repeat-ringing,44100,full-fundamental,D2,D2,D2,1,1,0,-
+full-range-yin+nsm,repeat-ringing,44100,weak-fundamental,D2,D2,D2,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,44100,full-fundamental,D2,D2,D2 D2,2,2,1,46.30
+full-range-yin+nsm,repeat-muted-30ms,44100,weak-fundamental,D2,D2,D2 D2,2,2,1,46.30
+full-range-yin+nsm,change-fourth,44100,full-fundamental,D2,G2,D2 G2,2,2,1,61.27
+full-range-yin+nsm,change-fourth,44100,weak-fundamental,D2,G2,D2 G2,2,2,1,61.27
+full-range-yin+nsm,change-octave,44100,full-fundamental,D2,D3,D2 D3,2,2,1,88.71
+full-range-yin+nsm,change-octave,44100,weak-fundamental,D2,D3,D2 D3,2,2,1,88.71
+full-range-yin+nsm,repeat-ringing,44100,full-fundamental,G2,G2,G2,1,1,0,-
+full-range-yin+nsm,repeat-ringing,44100,weak-fundamental,G2,G2,G2,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,44100,full-fundamental,G2,G2,G2 G2,2,2,1,51.29
+full-range-yin+nsm,repeat-muted-30ms,44100,weak-fundamental,G2,G2,G2 G2,2,2,1,48.80
+full-range-yin+nsm,change-fourth,44100,full-fundamental,G2,C3,G2 C3,2,2,1,56.28
+full-range-yin+nsm,change-fourth,44100,weak-fundamental,G2,C3,G2 C3,2,2,1,58.78
+full-range-yin+nsm,change-octave,44100,full-fundamental,G2,G3,G2 G3,2,2,1,88.71
+full-range-yin+nsm,change-octave,44100,weak-fundamental,G2,G3,G2 G3,2,2,1,91.20
+full-range-yin+nsm,repeat-ringing,44100,full-fundamental,C3,C3,C3,1,1,0,-
+full-range-yin+nsm,repeat-ringing,44100,weak-fundamental,C3,C3,C3,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,44100,full-fundamental,C3,C3,C3 C3,2,2,1,48.80
+full-range-yin+nsm,repeat-muted-30ms,44100,weak-fundamental,C3,C3,C3 C3,2,2,1,48.80
+full-range-yin+nsm,change-fourth,44100,full-fundamental,C3,F3,C3 F3,2,2,1,58.78
+full-range-yin+nsm,change-fourth,44100,weak-fundamental,C3,F3,C3 F3,2,2,1,58.78
+full-range-yin+nsm,change-octave,44100,full-fundamental,C3,C4,C3 C4,2,2,1,88.71
+full-range-yin+nsm,change-octave,44100,weak-fundamental,C3,C4,C3 C4,2,2,1,83.72
+full-range-yin+nsm,repeat-ringing,44100,full-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin+nsm,repeat-ringing,44100,weak-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,44100,full-fundamental,G3,G3,G3 G3,2,2,1,43.81
+full-range-yin+nsm,repeat-muted-30ms,44100,weak-fundamental,G3,G3,G3 G3,2,2,1,46.30
+full-range-yin+nsm,change-fourth,44100,full-fundamental,G3,C4,G3 C4,2,2,1,56.28
+full-range-yin+nsm,change-fourth,44100,weak-fundamental,G3,C4,G3 C4,2,2,1,56.28
+full-range-yin+nsm,change-octave,44100,full-fundamental,G3,G4,G3 G4,2,2,1,88.71
+full-range-yin+nsm,change-octave,44100,weak-fundamental,G3,G4,G3 G4,2,2,1,83.72
+warf-like-yin,repeat-ringing,48000,full-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,repeat-ringing,48000,weak-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,repeat-muted-30ms,48000,full-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,repeat-muted-30ms,48000,weak-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,change-fourth,48000,full-fundamental,E1,A1,A1,1,1,0,-
+warf-like-yin,change-fourth,48000,weak-fundamental,E1,A1,A1,1,1,0,-
+warf-like-yin,change-octave,48000,full-fundamental,E1,E2,E2,1,1,0,-
+warf-like-yin,change-octave,48000,weak-fundamental,E1,E2,E2,1,1,0,-
+warf-like-yin,repeat-ringing,48000,full-fundamental,A1,A1,A1,1,1,0,-
+warf-like-yin,repeat-ringing,48000,weak-fundamental,A1,A1,A1,1,1,0,-
+warf-like-yin,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,50.67
+warf-like-yin,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,50.67
+warf-like-yin,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,50.67
+warf-like-yin,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,50.67
+warf-like-yin,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,50.67
+warf-like-yin,repeat-ringing,48000,full-fundamental,D2,D2,D2,1,1,0,-
+warf-like-yin,repeat-ringing,48000,weak-fundamental,D2,D2,D2,1,1,0,-
+warf-like-yin,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,50.67
+warf-like-yin,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,61.33
+warf-like-yin,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,50.67
+warf-like-yin,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,61.33
+warf-like-yin,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,50.67
+warf-like-yin,repeat-ringing,48000,full-fundamental,G2,G2,G2,1,1,0,-
+warf-like-yin,repeat-ringing,48000,weak-fundamental,G2,G2,G2,1,1,0,-
+warf-like-yin,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.67
+warf-like-yin,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,50.67
+warf-like-yin,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,50.67
+warf-like-yin,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,50.67
+warf-like-yin,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,61.33
+warf-like-yin,repeat-ringing,48000,full-fundamental,C3,C3,C3,1,1,0,-
+warf-like-yin,repeat-ringing,48000,weak-fundamental,C3,C3,C3,1,1,0,-
+warf-like-yin,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.67
+warf-like-yin,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,50.67
+warf-like-yin,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,50.67
+warf-like-yin,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,50.67
+warf-like-yin,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,50.67
+warf-like-yin,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+warf-like-yin,repeat-ringing,48000,weak-fundamental,G3,G3,G3,1,1,0,-
+warf-like-yin,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,50.67
+warf-like-yin,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,50.67
+warf-like-yin,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,50.67
+warf-like-yin,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,50.67
+warf-like-yin,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,50.67
+full-range-yin,repeat-ringing,48000,full-fundamental,E1,E1,E1 E1,2,2,1,55.17
+full-range-yin,repeat-ringing,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,55.17
+full-range-yin,repeat-muted-30ms,48000,full-fundamental,E1,E1,E1 E1,2,2,1,50.17
+full-range-yin,repeat-muted-30ms,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,52.67
+full-range-yin,change-fourth,48000,full-fundamental,E1,A1,E1 A1,2,2,1,50.17
+full-range-yin,change-fourth,48000,weak-fundamental,E1,A1,E1 A1,2,2,1,50.17
+full-range-yin,change-octave,48000,full-fundamental,E1,E2,E1 E2,2,2,1,52.67
+full-range-yin,change-octave,48000,weak-fundamental,E1,E2,E1 E2,2,2,1,52.67
+full-range-yin,repeat-ringing,48000,full-fundamental,A1,A1,A1 A1,2,2,1,50.17
+full-range-yin,repeat-ringing,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,50.17
+full-range-yin,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,50.17
+full-range-yin,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,50.17
+full-range-yin,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,50.17
+full-range-yin,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,47.67
+full-range-yin,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,50.17
+full-range-yin,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,50.17
+full-range-yin,repeat-ringing,48000,full-fundamental,D2,D2,D2 D2,2,2,1,52.67
+full-range-yin,repeat-ringing,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,47.67
+full-range-yin,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,45.17
+full-range-yin,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,47.67
+full-range-yin,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,52.67
+full-range-yin,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,52.67
+full-range-yin,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,52.67
+full-range-yin,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,52.67
+full-range-yin,repeat-ringing,48000,full-fundamental,G2,G2,G2 G2,2,2,1,47.67
+full-range-yin,repeat-ringing,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.17
+full-range-yin,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,50.17
+full-range-yin,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.17
+full-range-yin,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,47.67
+full-range-yin,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,50.17
+full-range-yin,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,52.67
+full-range-yin,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,52.67
+full-range-yin,repeat-ringing,48000,full-fundamental,C3,C3,C3 C3,2,2,1,50.17
+full-range-yin,repeat-ringing,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.17
+full-range-yin,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,50.17
+full-range-yin,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.17
+full-range-yin,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,52.67
+full-range-yin,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,50.17
+full-range-yin,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,50.17
+full-range-yin,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,45.17
+full-range-yin,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin,repeat-ringing,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,42.67
+full-range-yin,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,45.17
+full-range-yin,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,47.67
+full-range-yin,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,47.67
+full-range-yin,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,50.17
+full-range-yin,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,52.67
+full-range-yin,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,47.67
+full-range-yin+nsm,repeat-ringing,48000,full-fundamental,E1,E1,E1,1,1,0,-
+full-range-yin+nsm,repeat-ringing,48000,weak-fundamental,E1,E1,E1,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,48000,full-fundamental,E1,E1,E1 E1,2,2,1,50.17
+full-range-yin+nsm,repeat-muted-30ms,48000,weak-fundamental,E1,E1,E1 E1,2,2,1,52.67
+full-range-yin+nsm,change-fourth,48000,full-fundamental,E1,A1,E1 A1,2,2,1,55.17
+full-range-yin+nsm,change-fourth,48000,weak-fundamental,E1,A1,E1 A1,2,2,1,55.17
+full-range-yin+nsm,change-octave,48000,full-fundamental,E1,E2,E1 E2,2,2,1,87.67
+full-range-yin+nsm,change-octave,48000,weak-fundamental,E1,E2,E1 E2,2,2,1,87.67
+full-range-yin+nsm,repeat-ringing,48000,full-fundamental,A1,A1,A1,1,1,0,-
+full-range-yin+nsm,repeat-ringing,48000,weak-fundamental,A1,A1,A1,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,48000,full-fundamental,A1,A1,A1 A1,2,2,1,50.17
+full-range-yin+nsm,repeat-muted-30ms,48000,weak-fundamental,A1,A1,A1 A1,2,2,1,50.17
+full-range-yin+nsm,change-fourth,48000,full-fundamental,A1,D2,A1 D2,2,2,1,55.17
+full-range-yin+nsm,change-fourth,48000,weak-fundamental,A1,D2,A1 D2,2,2,1,52.67
+full-range-yin+nsm,change-octave,48000,full-fundamental,A1,A2,A1 A2,2,2,1,85.17
+full-range-yin+nsm,change-octave,48000,weak-fundamental,A1,A2,A1 A2,2,2,1,85.17
+full-range-yin+nsm,repeat-ringing,48000,full-fundamental,D2,D2,D2,1,1,0,-
+full-range-yin+nsm,repeat-ringing,48000,weak-fundamental,D2,D2,D2,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,48000,full-fundamental,D2,D2,D2 D2,2,2,1,45.17
+full-range-yin+nsm,repeat-muted-30ms,48000,weak-fundamental,D2,D2,D2 D2,2,2,1,47.67
+full-range-yin+nsm,change-fourth,48000,full-fundamental,D2,G2,D2 G2,2,2,1,57.67
+full-range-yin+nsm,change-fourth,48000,weak-fundamental,D2,G2,D2 G2,2,2,1,57.67
+full-range-yin+nsm,change-octave,48000,full-fundamental,D2,D3,D2 D3,2,2,1,87.67
+full-range-yin+nsm,change-octave,48000,weak-fundamental,D2,D3,D2 D3,2,2,1,87.67
+full-range-yin+nsm,repeat-ringing,48000,full-fundamental,G2,G2,G2,1,1,0,-
+full-range-yin+nsm,repeat-ringing,48000,weak-fundamental,G2,G2,G2,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,48000,full-fundamental,G2,G2,G2 G2,2,2,1,50.17
+full-range-yin+nsm,repeat-muted-30ms,48000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.17
+full-range-yin+nsm,change-fourth,48000,full-fundamental,G2,C3,G2 C3,2,2,1,52.67
+full-range-yin+nsm,change-fourth,48000,weak-fundamental,G2,C3,G2 C3,2,2,1,55.17
+full-range-yin+nsm,change-octave,48000,full-fundamental,G2,G3,G2 G3,2,2,1,87.67
+full-range-yin+nsm,change-octave,48000,weak-fundamental,G2,G3,G2 G3,2,2,1,87.67
+full-range-yin+nsm,repeat-ringing,48000,full-fundamental,C3,C3,C3,1,1,0,-
+full-range-yin+nsm,repeat-ringing,48000,weak-fundamental,C3,C3,C3,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,48000,full-fundamental,C3,C3,C3 C3,2,2,1,50.17
+full-range-yin+nsm,repeat-muted-30ms,48000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.17
+full-range-yin+nsm,change-fourth,48000,full-fundamental,C3,F3,C3 F3,2,2,1,57.67
+full-range-yin+nsm,change-fourth,48000,weak-fundamental,C3,F3,C3 F3,2,2,1,55.17
+full-range-yin+nsm,change-octave,48000,full-fundamental,C3,C4,C3 C4,2,2,1,85.17
+full-range-yin+nsm,change-octave,48000,weak-fundamental,C3,C4,C3 C4,2,2,1,80.17
+full-range-yin+nsm,repeat-ringing,48000,full-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin+nsm,repeat-ringing,48000,weak-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,48000,full-fundamental,G3,G3,G3 G3,2,2,1,45.17
+full-range-yin+nsm,repeat-muted-30ms,48000,weak-fundamental,G3,G3,G3 G3,2,2,1,47.67
+full-range-yin+nsm,change-fourth,48000,full-fundamental,G3,C4,G3 C4,2,2,1,52.67
+full-range-yin+nsm,change-fourth,48000,weak-fundamental,G3,C4,G3 C4,2,2,1,55.17
+full-range-yin+nsm,change-octave,48000,full-fundamental,G3,G4,G3 G4,2,2,1,87.67
+full-range-yin+nsm,change-octave,48000,weak-fundamental,G3,G4,G3 G4,2,2,1,82.67
+warf-like-yin,repeat-ringing,96000,full-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,repeat-ringing,96000,weak-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,repeat-muted-30ms,96000,full-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,repeat-muted-30ms,96000,weak-fundamental,E1,E1,none,0,0,0,-
+warf-like-yin,change-fourth,96000,full-fundamental,E1,A1,A1,1,1,0,-
+warf-like-yin,change-fourth,96000,weak-fundamental,E1,A1,A1,1,1,0,-
+warf-like-yin,change-octave,96000,full-fundamental,E1,E2,E2,1,1,0,-
+warf-like-yin,change-octave,96000,weak-fundamental,E1,E2,E2,1,1,0,-
+warf-like-yin,repeat-ringing,96000,full-fundamental,A1,A1,A1,1,1,0,-
+warf-like-yin,repeat-ringing,96000,weak-fundamental,A1,A1,A1,1,1,0,-
+warf-like-yin,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,50.67
+warf-like-yin,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,50.67
+warf-like-yin,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,50.67
+warf-like-yin,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,50.67
+warf-like-yin,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,50.67
+warf-like-yin,repeat-ringing,96000,full-fundamental,D2,D2,D2,1,1,0,-
+warf-like-yin,repeat-ringing,96000,weak-fundamental,D2,D2,D2,1,1,0,-
+warf-like-yin,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,50.67
+warf-like-yin,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,61.33
+warf-like-yin,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,50.67
+warf-like-yin,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,61.33
+warf-like-yin,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,50.67
+warf-like-yin,repeat-ringing,96000,full-fundamental,G2,G2,G2,1,1,0,-
+warf-like-yin,repeat-ringing,96000,weak-fundamental,G2,G2,G2,1,1,0,-
+warf-like-yin,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.67
+warf-like-yin,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,50.67
+warf-like-yin,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,50.67
+warf-like-yin,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,50.67
+warf-like-yin,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,61.33
+warf-like-yin,repeat-ringing,96000,full-fundamental,C3,C3,C3,1,1,0,-
+warf-like-yin,repeat-ringing,96000,weak-fundamental,C3,C3,C3,1,1,0,-
+warf-like-yin,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.67
+warf-like-yin,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,50.67
+warf-like-yin,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,50.67
+warf-like-yin,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,50.67
+warf-like-yin,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,50.67
+warf-like-yin,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+warf-like-yin,repeat-ringing,96000,weak-fundamental,G3,G3,G3,1,1,0,-
+warf-like-yin,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,50.67
+warf-like-yin,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,50.67
+warf-like-yin,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,50.67
+warf-like-yin,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,50.67
+warf-like-yin,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,50.67
+warf-like-yin,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,50.67
+full-range-yin,repeat-ringing,96000,full-fundamental,E1,E1,E1 E1,2,2,1,55.15
+full-range-yin,repeat-ringing,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,55.15
+full-range-yin,repeat-muted-30ms,96000,full-fundamental,E1,E1,E1 E1,2,2,1,50.15
+full-range-yin,repeat-muted-30ms,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,52.65
+full-range-yin,change-fourth,96000,full-fundamental,E1,A1,E1 A1,2,2,1,50.15
+full-range-yin,change-fourth,96000,weak-fundamental,E1,A1,E1 A1,2,2,1,50.15
+full-range-yin,change-octave,96000,full-fundamental,E1,E2,E1 E2,2,2,1,52.65
+full-range-yin,change-octave,96000,weak-fundamental,E1,E2,E1 E2,2,2,1,52.65
+full-range-yin,repeat-ringing,96000,full-fundamental,A1,A1,A1 A1,2,2,1,50.15
+full-range-yin,repeat-ringing,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,50.15
+full-range-yin,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,50.15
+full-range-yin,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,50.15
+full-range-yin,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,50.15
+full-range-yin,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,47.65
+full-range-yin,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,50.15
+full-range-yin,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,50.15
+full-range-yin,repeat-ringing,96000,full-fundamental,D2,D2,D2 D2,2,2,1,52.65
+full-range-yin,repeat-ringing,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,47.65
+full-range-yin,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,45.15
+full-range-yin,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,47.65
+full-range-yin,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,52.65
+full-range-yin,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,52.65
+full-range-yin,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,52.65
+full-range-yin,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,52.65
+full-range-yin,repeat-ringing,96000,full-fundamental,G2,G2,G2 G2,2,2,1,47.65
+full-range-yin,repeat-ringing,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.15
+full-range-yin,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,50.15
+full-range-yin,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.15
+full-range-yin,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,50.15
+full-range-yin,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,50.15
+full-range-yin,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,52.65
+full-range-yin,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,52.65
+full-range-yin,repeat-ringing,96000,full-fundamental,C3,C3,C3 C3,2,2,1,50.15
+full-range-yin,repeat-ringing,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.15
+full-range-yin,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,50.15
+full-range-yin,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.15
+full-range-yin,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,52.65
+full-range-yin,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,50.15
+full-range-yin,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,50.15
+full-range-yin,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,45.15
+full-range-yin,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin,repeat-ringing,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,42.65
+full-range-yin,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,45.15
+full-range-yin,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,47.65
+full-range-yin,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,47.65
+full-range-yin,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,50.15
+full-range-yin,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,52.65
+full-range-yin,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,47.65
+full-range-yin+nsm,repeat-ringing,96000,full-fundamental,E1,E1,E1,1,1,0,-
+full-range-yin+nsm,repeat-ringing,96000,weak-fundamental,E1,E1,E1,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,96000,full-fundamental,E1,E1,E1 E1,2,2,1,50.15
+full-range-yin+nsm,repeat-muted-30ms,96000,weak-fundamental,E1,E1,E1 E1,2,2,1,52.65
+full-range-yin+nsm,change-fourth,96000,full-fundamental,E1,A1,E1 A1,2,2,1,55.15
+full-range-yin+nsm,change-fourth,96000,weak-fundamental,E1,A1,E1 A1,2,2,1,55.15
+full-range-yin+nsm,change-octave,96000,full-fundamental,E1,E2,E1 E2,2,2,1,87.65
+full-range-yin+nsm,change-octave,96000,weak-fundamental,E1,E2,E1 E2,2,2,1,87.65
+full-range-yin+nsm,repeat-ringing,96000,full-fundamental,A1,A1,A1,1,1,0,-
+full-range-yin+nsm,repeat-ringing,96000,weak-fundamental,A1,A1,A1,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,96000,full-fundamental,A1,A1,A1 A1,2,2,1,50.15
+full-range-yin+nsm,repeat-muted-30ms,96000,weak-fundamental,A1,A1,A1 A1,2,2,1,60.15
+full-range-yin+nsm,change-fourth,96000,full-fundamental,A1,D2,A1 D2,2,2,1,55.15
+full-range-yin+nsm,change-fourth,96000,weak-fundamental,A1,D2,A1 D2,2,2,1,52.65
+full-range-yin+nsm,change-octave,96000,full-fundamental,A1,A2,A1 A2,2,2,1,85.15
+full-range-yin+nsm,change-octave,96000,weak-fundamental,A1,A2,A1 A2,2,2,1,85.15
+full-range-yin+nsm,repeat-ringing,96000,full-fundamental,D2,D2,D2,1,1,0,-
+full-range-yin+nsm,repeat-ringing,96000,weak-fundamental,D2,D2,D2,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,96000,full-fundamental,D2,D2,D2 D2,2,2,1,45.15
+full-range-yin+nsm,repeat-muted-30ms,96000,weak-fundamental,D2,D2,D2 D2,2,2,1,47.65
+full-range-yin+nsm,change-fourth,96000,full-fundamental,D2,G2,D2 G2,2,2,1,57.65
+full-range-yin+nsm,change-fourth,96000,weak-fundamental,D2,G2,D2 G2,2,2,1,57.65
+full-range-yin+nsm,change-octave,96000,full-fundamental,D2,D3,D2 D3,2,2,1,87.65
+full-range-yin+nsm,change-octave,96000,weak-fundamental,D2,D3,D2 D3,2,2,1,87.65
+full-range-yin+nsm,repeat-ringing,96000,full-fundamental,G2,G2,G2,1,1,0,-
+full-range-yin+nsm,repeat-ringing,96000,weak-fundamental,G2,G2,G2,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,96000,full-fundamental,G2,G2,G2 G2,2,2,1,50.15
+full-range-yin+nsm,repeat-muted-30ms,96000,weak-fundamental,G2,G2,G2 G2,2,2,1,50.15
+full-range-yin+nsm,change-fourth,96000,full-fundamental,G2,C3,G2 C3,2,2,1,55.15
+full-range-yin+nsm,change-fourth,96000,weak-fundamental,G2,C3,G2 C3,2,2,1,55.15
+full-range-yin+nsm,change-octave,96000,full-fundamental,G2,G3,G2 G3,2,2,1,87.65
+full-range-yin+nsm,change-octave,96000,weak-fundamental,G2,G3,G2 G3,2,2,1,87.65
+full-range-yin+nsm,repeat-ringing,96000,full-fundamental,C3,C3,C3,1,1,0,-
+full-range-yin+nsm,repeat-ringing,96000,weak-fundamental,C3,C3,C3,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,96000,full-fundamental,C3,C3,C3 C3,2,2,1,50.15
+full-range-yin+nsm,repeat-muted-30ms,96000,weak-fundamental,C3,C3,C3 C3,2,2,1,50.15
+full-range-yin+nsm,change-fourth,96000,full-fundamental,C3,F3,C3 F3,2,2,1,57.65
+full-range-yin+nsm,change-fourth,96000,weak-fundamental,C3,F3,C3 F3,2,2,1,55.15
+full-range-yin+nsm,change-octave,96000,full-fundamental,C3,C4,C3 C4,2,2,1,85.15
+full-range-yin+nsm,change-octave,96000,weak-fundamental,C3,C4,C3 C4,2,2,1,80.15
+full-range-yin+nsm,repeat-ringing,96000,full-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin+nsm,repeat-ringing,96000,weak-fundamental,G3,G3,G3,1,1,0,-
+full-range-yin+nsm,repeat-muted-30ms,96000,full-fundamental,G3,G3,G3 G3,2,2,1,45.15
+full-range-yin+nsm,repeat-muted-30ms,96000,weak-fundamental,G3,G3,G3 G3,2,2,1,47.65
+full-range-yin+nsm,change-fourth,96000,full-fundamental,G3,C4,G3 C4,2,2,1,52.65
+full-range-yin+nsm,change-fourth,96000,weak-fundamental,G3,C4,G3 C4,2,2,1,55.15
+full-range-yin+nsm,change-octave,96000,full-fundamental,G3,G4,G3 G4,2,2,1,87.65
+full-range-yin+nsm,change-octave,96000,weak-fundamental,G3,G4,G3 G4,2,2,1,82.65
