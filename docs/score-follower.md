@@ -25,6 +25,13 @@ So the bar, not the single note, is the unit to follow, and the root (downbeat) 
 - On the two test songs the computed fingering agrees with the file's own tab for 80 % and 95 % of the notes.
   The rest are equivalent positions, for example fret 5 on A instead of open D.
 
+### Song key
+
+`song::transposeTrack` moves the chosen track by ±12 semitones before the palette, timeline and tablature are
+built. In the app this is the **Song key** setting, saved per song.
+- File fingerings shift along the same string; where that leaves frets 0–20 the note is fingered anew.
+- Notes that would fall below E1 move up an octave, because a 4-string EADG bass cannot play them.
+
 ## Anchor weights
 
 `anchorWeight` (0..1) says how likely the player is to play a note as written:

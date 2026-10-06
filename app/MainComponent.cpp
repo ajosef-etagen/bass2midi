@@ -101,10 +101,18 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     // Song palette: the song list is restored from the settings; a missing or unreadable file stays
     // listed with its error and selecting it means Free mode, so a song never blocks normal use.
     songs.restoreState (settings.getValue (songLibraryKey));
-    for (auto* label : { &songLabel, &trackLabel })
+    for (auto* label : { &songLabel, &trackLabel, &songKeyLabel })
         label->setJustificationType (juce::Justification::centredRight);
     songBox.onChange = [this] { songChosen(); };
     trackBox.onChange = [this] { trackChosen(); };
+    songKeySlider.setRange (-bass2midi::song::maxTransposeSemitones, bass2midi::song::maxTransposeSemitones, 1.0);
+    songKeySlider.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 56, 24);
+    songKeySlider.setTextValueSuffix (" st");
+    songKeySlider.setDoubleClickReturnValue (true, 0.0);
+    songKeySlider.onValueChange = [this] { songKeyChanged(); };
+    songKeySlider.setTooltip ("Transposes this song's notes (palette, Song Mode, bar playback, score follower, tablature) "
+                              "to the key the band plays it in. Saved per song. Notes that would fall below the open "
+                              "low E move up an octave.");
     previousSongButton.onClick = [this] { stepSong (-1); };
     nextSongButton.onClick = [this] { stepSong (1); };
     addSongsButton.onClick = [this] { addSongs(); };
@@ -112,7 +120,8 @@ MainComponent::MainComponent (juce::PropertiesFile& settingsToUse) : settings (s
     previousSongButton.setTooltip ("Previous song");
     nextSongButton.setTooltip ("Next song");
     for (auto* c : std::initializer_list<juce::Component*> { &songLabel, &songBox, &previousSongButton, &nextSongButton,
-                                                             &addSongsButton, &removeSongButton, &trackLabel, &trackBox, &paletteLabel })
+                                                             &addSongsButton, &removeSongButton, &trackLabel, &trackBox, &songKeyLabel,
+                                                             &songKeySlider, &paletteLabel })
         addAndMakeVisible (*c);
     modeBox.addItem ("Free: pitch detection decides", 1);
     modeBox.addItem ("Song Mode: an attack plays the song's next note", 2);
@@ -260,6 +269,8 @@ void MainComponent::songChosen()
         }
         trackBox.setSelectedId (entry.track + 1, juce::dontSendNotification);
     }
+    songKeySlider.setValue (index >= 0 ? songs[index].transpose : 0, juce::dontSendNotification);
+    songKeySlider.setEnabled (index >= 0 && songs[index].usable());
     trackBox.setEnabled (index >= 0 && songs[index].usable());
     removeSongButton.setEnabled (index >= 0);
     previousSongButton.setEnabled (songs.size() > 0);
@@ -274,6 +285,22 @@ void MainComponent::trackChosen()
         return;
     songs.setTrack (index, trackBox.getSelectedId() - 1);
     applySongPalette();
+}
+
+void MainComponent::songKeyChanged()
+{
+    const int index = selectedSongIndex();
+    if (index < 0)
+        return;
+    songs.setTranspose (index, (int) songKeySlider.getValue());
+    // Same song, other key: keep the tempo the player set.
+    const double bpm = bpmSlider.getValue();
+    applySongPalette();
+    if (! songBars.empty())
+    {
+        bpmSlider.setValue (bpm, juce::dontSendNotification);
+        engine.armScoreFollower (playedBarForWritten ((int) startBarSlider.getValue() - 1), bpm);
+    }
 }
 
 void MainComponent::applySongPalette()
@@ -294,6 +321,8 @@ void MainComponent::applySongPalette()
     {
         palette = songs[index].palette();
         text = "Palette: " + SongLibrary::describe (palette);
+        if (songs[index].transpose != 0)
+            text << "  (transposed " << (songs[index].transpose > 0 ? "+" : "") << songs[index].transpose << " st)";
     }
 
     engine.setPalette (palette);
@@ -302,7 +331,7 @@ void MainComponent::applySongPalette()
     songTimeline.clear();
     songBars.clear();
     if (index >= 0 && songs[index].usable())
-        songTimeline = bass2midi::song::expectedNotes (songs[index].song, songs[index].track, songBars);
+        songTimeline = bass2midi::song::expectedNotes (songs[index].played(), songs[index].track, songBars);
     engine.setSongTimeline (songTimeline, songBars);
     if (tabView != nullptr)
         tabView->setSong (&songTimeline, &songBars);
@@ -381,7 +410,7 @@ void MainComponent::showTablature()
         auto bounds = window->getBounds();
         if (bounds.intersects (main))
         {
-            const auto screen = juce::Desktop::getInstance().getDisplays().getDisplayForRect (main)->userArea;
+            const auto screen = juce::Desktop::getInstance().getDisplays().getDisplayForRect (main)->userBounds;
             if (main.getRight() + bounds.getWidth() <= screen.getRight())
                 bounds.setPosition (main.getRight() + 8, main.getY());
             else
@@ -594,7 +623,7 @@ void MainComponent::timerCallback()
 
     text << "MIDI\n"
          << "  output         " << (midiEnabledToggle.getToggleState() ? "on" : "off") << ", channel " << currentMidiChannel
-         << ", transpose " << juce::String ((int) transposeSlider.getValue()) << " st\n"
+         << ", output transpose " << juce::String ((int) transposeSlider.getValue()) << " st\n"
          << "  sounding       " << (s.soundingNote >= 0 ? juce::String (bass2midi::midi::noteName (s.soundingNote)) : juce::String ("-")) << "\n"
          << "  note ons       " << s.noteOnCount << " (last velocity " << s.lastVelocity << ")\n"
          << "  sender poll    <= " << MidiOutputSender::senderPollIntervalMs << " ms added\n"
@@ -689,6 +718,8 @@ void MainComponent::resized()
     auto trackRow = area.removeFromTop (28);
     trackLabel.setBounds (trackRow.removeFromLeft (92));
     trackBox.setBounds (trackRow.removeFromLeft (300));
+    songKeyLabel.setBounds (trackRow.removeFromLeft (80));
+    songKeySlider.setBounds (trackRow.removeFromLeft (140));
     area.removeFromTop (2);
     paletteLabel.setBounds (area.removeFromTop (24));
     area.removeFromTop (4);

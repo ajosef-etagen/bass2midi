@@ -3,6 +3,7 @@
 #include "Readers.h"
 #include "ZipReader.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iterator>
 
@@ -78,5 +79,36 @@ namespace bass2midi::song
             if (! note.tieContinuation)
                 palette.add (note.midiNote);
         return palette;
+    }
+
+    bool transposeTrack (Track& track, int semitones)
+    {
+        if (semitones < -maxTransposeSemitones || semitones > maxTransposeSemitones)
+            return false;
+        if (semitones == 0)
+            return true;
+        constexpr int lowestEadgNote = 28; // E1, open low E
+        constexpr int maxFret = 20;
+        for (auto& note : track.notes)
+        {
+            const int original = note.midiNote;
+            int shifted = original + semitones;
+            bool folded = false;
+            if (shifted < lowestEadgNote && original >= lowestEadgNote)
+            {
+                shifted += 12;
+                folded = true;
+            }
+            note.midiNote = std::clamp (shifted, 0, 127);
+            if (note.string >= 0 && note.fret >= 0)
+            {
+                const int fret = note.fret + semitones;
+                if (folded || note.midiNote != shifted || fret < 0 || fret > maxFret)
+                    note.string = note.fret = -1;
+                else
+                    note.fret = fret;
+            }
+        }
+        return true;
     }
 }

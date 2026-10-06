@@ -72,6 +72,15 @@ namespace bass2midi::song
     // Palette of all attacked notes of a track (tie continuations add nothing new).
     NotePalette paletteFromTrack (const Track& track);
 
+    // Transposes a track by `semitones` (-12..+12) so the song matches the key the band plays in.
+    // Every note moves by the interval; string/fret from the file shift by the same number of frets
+    // on the same string (the shape the player keeps) and are dropped when that leaves frets 0..20,
+    // so the fingering is chosen anew (assignFingering). A note that was playable on a 4-string EADG
+    // bass (>= E1) but would fall below E1 is raised an octave instead: the instrument cannot play
+    // it. Returns false (track unchanged) for an out-of-range interval.
+    static constexpr int maxTransposeSemitones = 12;
+    bool transposeTrack (Track& track, int semitones);
+
     // Written bar indices in playing order: simple repeats (with a play count) and alternate endings
     // are unrolled; nested repeats, codas, segnos and D.C./D.S. are not interpreted. At most
     // maxBars entries (guards against malformed repeat structures).

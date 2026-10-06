@@ -16,9 +16,17 @@ juce::String SongLibrary::Entry::displayName() const
     return name;
 }
 
+bass2midi::song::Song SongLibrary::Entry::played() const
+{
+    auto copy = song;
+    if (usable())
+        bass2midi::song::transposeTrack (copy.tracks[(size_t) track], transpose);
+    return copy;
+}
+
 bass2midi::NotePalette SongLibrary::Entry::palette() const
 {
-    return usable() ? bass2midi::song::paletteFromTrack (song.tracks[(size_t) track]) : bass2midi::NotePalette {};
+    return usable() ? bass2midi::song::paletteFromTrack (played().tracks[(size_t) track]) : bass2midi::NotePalette {};
 }
 
 int SongLibrary::add (const juce::File& file)
@@ -59,11 +67,18 @@ void SongLibrary::setTrack (int index, int track)
         entry.track = track;
 }
 
+void SongLibrary::setTranspose (int index, int semitones)
+{
+    if (index >= 0 && index < size())
+        entries[(size_t) index].transpose = juce::jlimit (-bass2midi::song::maxTransposeSemitones,
+                                                          bass2midi::song::maxTransposeSemitones, semitones);
+}
+
 juce::String SongLibrary::toState() const
 {
     juce::StringArray lines;
     for (const auto& e : entries)
-        lines.add (juce::String (e.track) + "\t" + e.file.getFullPathName());
+        lines.add (juce::String (e.track) + "/" + juce::String (e.transpose) + "\t" + e.file.getFullPathName());
     return lines.joinIntoString ("\n");
 }
 
@@ -76,7 +91,10 @@ void SongLibrary::restoreState (const juce::String& state)
         if (tab <= 0)
             continue;
         const auto index = add (juce::File (line.substring (tab + 1)));
-        setTrack (index, line.substring (0, tab).getIntValue());
+        const auto fields = line.substring (0, tab);
+        setTrack (index, fields.upToFirstOccurrenceOf ("/", false, false).getIntValue());
+        if (fields.containsChar ('/'))
+            setTranspose (index, fields.fromFirstOccurrenceOf ("/", false, false).getIntValue());
     }
 }
 

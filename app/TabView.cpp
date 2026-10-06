@@ -55,7 +55,7 @@ void TabView::paint (juce::Graphics& g)
                 const auto& n = (*notes)[(size_t) i];
                 text << "  " << bass2midi::midi::noteName (n.midiNote);
                 if (n.string >= 0)
-                    text << " (" << stringNames[n.string] << n.fret << ")";
+                    text << " (" << stringNames[n.string] << ":" << n.fret << ")";
             }
         }
     }

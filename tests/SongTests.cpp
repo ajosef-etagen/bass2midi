@@ -322,6 +322,52 @@ TEST_CASE ("Tablature: the file's string/fret is kept; otherwise few position ch
     CHECK (riff.back().string == -1); // below E1
 }
 
+TEST_CASE ("Transposition: notes, palette and tablature move to the band's key")
+{
+    song::Song original;
+    std::string error;
+    REQUIRE (song::loadSongFile (dataPath ("repeats.gp"), original, error));
+    const auto before = song::expectedNotes (original, 0); // E string, frets 0 1 2 0 1 3 4
+
+    // Up a whole tone: same shape two frets higher on the same string.
+    auto up = original;
+    REQUIRE (song::transposeTrack (up.tracks[0], 2));
+    const auto upNotes = song::expectedNotes (up, 0);
+    REQUIRE (upNotes.size() == before.size());
+    for (std::size_t i = 0; i < before.size(); ++i)
+    {
+        CAPTURE (i);
+        CHECK (upNotes[i].midiNote == before[i].midiNote + 2);
+        CHECK (upNotes[i].string == 0);
+        CHECK (upNotes[i].fret == before[i].fret + 2);
+        CHECK (upNotes[i].startSeconds == doctest::Approx (before[i].startSeconds));
+    }
+    CHECK (song::paletteFromTrack (up.tracks[0]).contains (32));
+    CHECK_FALSE (song::paletteFromTrack (up.tracks[0]).contains (28));
+
+    // Down a whole tone: E1 and F1 would fall below the open low E and move up an octave; F#1 -> E1
+    // (open string); every note gets a playable EADG position consistent with its pitch.
+    auto down = original;
+    REQUIRE (song::transposeTrack (down.tracks[0], -2));
+    const auto downNotes = song::expectedNotes (down, 0);
+    REQUIRE (downNotes.size() == before.size());
+    const std::vector<int> expected { 38, 39, 28, 38, 39, 29, 30 };
+    for (std::size_t i = 0; i < downNotes.size(); ++i)
+    {
+        CAPTURE (i);
+        CHECK (downNotes[i].midiNote == expected[i]);
+        REQUIRE (downNotes[i].string >= 0);
+        CHECK (downNotes[i].midiNote == std::vector<int> { 28, 33, 38, 43 }[static_cast<std::size_t> (downNotes[i].string)] + downNotes[i].fret);
+    }
+
+    // Validation: zero is a no-op, out-of-range intervals leave the track unchanged.
+    auto same = original;
+    CHECK (song::transposeTrack (same.tracks[0], 0));
+    CHECK_FALSE (song::transposeTrack (same.tracks[0], 13));
+    CHECK_FALSE (song::transposeTrack (same.tracks[0], -13));
+    CHECK (song::expectedNotes (same, 0).front().midiNote == before.front().midiNote);
+}
+
 TEST_CASE ("Anchor weights: downbeats and long notes count most, short off-beat notes least")
 {
     song::Song s;

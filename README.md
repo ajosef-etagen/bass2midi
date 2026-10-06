@@ -54,7 +54,7 @@ libxinerama-dev libxcursor-dev libxcomposite-dev libxext-dev`), but macOS is the
    Recommended: 48 kHz, 64 or 128 samples buffer; use the same sample rate in MainStage.
 3. Set **Gate**: mute the strings, read the noise level under *Analysed input → peak*, and set the gate a few dB
    above it (default −45 dBFS). Plucks must exceed the gate to start a note.
-4. **Transpose** (±24 semitones, double-click resets to 0) shifts the sent notes, e.g. +12 for bass patches that
+4. **MIDI out transpose** (±24 semitones, double-click resets to 0) shifts the sent notes, e.g. +12 for bass patches that
    are mapped an octave low. Detection is unaffected; a sounding note keeps its output note until its Note Off.
 5. In MainStage, set a software instrument channel strip's MIDI input to `Bass2MIDI` and the channel to the one
    chosen in Bass2MIDI (default 1).
@@ -64,6 +64,10 @@ libxinerama-dev libxcursor-dev libxcomposite-dev libxext-dev`), but macOS is the
    (picked automatically). The palette line shows the notes Bass2MIDI now expects. **Free (no song guidance)** is
    the default and always one click away; a missing or unreadable file also means Free mode. The list and the
    selection are saved. Guidance is soft: notes outside the song are delayed slightly, never suppressed.
+   **Song key** (±12 semitones, saved per song) moves the song to the key your band plays it in: palette, Song
+   Mode, bar playback, score follower and tablature all use the transposed notes. The tab keeps the file's shape
+   shifted by the interval where it fits (frets 0–20). Notes that would fall below the open low E move up an
+   octave. **MIDI out transpose** is separate: it only shifts the notes sent to MainStage.
 8. Optional, experimental: **Song Mode** (needs a selected song). Each bass attack immediately plays the song's
    next expected note (synthetic tests: about 5 ms instead of about 40 ms median); the normal pitch detection checks it afterwards and
    corrects wrong notes, and when the confidence drops it takes over again (Free fallback). Set **Start at bar**

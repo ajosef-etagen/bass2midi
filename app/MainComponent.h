@@ -42,6 +42,7 @@ private:
     void refreshSongControls();
     void songChosen();
     void trackChosen();
+    void songKeyChanged();
     void applySongPalette();
     void addSongs();
     void removeSelectedSong();
@@ -71,7 +72,7 @@ private:
     juce::ComboBox midiChannelBox;
     juce::Label gateLabel { {}, "Gate (dBFS):" };
     juce::Slider gateSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight };
-    juce::Label transposeLabel { {}, "Transpose:" };
+    juce::Label transposeLabel { {}, "MIDI out transpose:" };
     juce::Slider transposeSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight };
     int currentMidiChannel = defaultMidiChannel;
     SongLibrary songs;
@@ -81,6 +82,8 @@ private:
     juce::TextButton addSongsButton { "Add songs..." }, removeSongButton { "Remove" };
     juce::Label trackLabel { {}, "Bass track:" };
     juce::ComboBox trackBox;
+    juce::Label songKeyLabel { {}, "Song key:" };
+    juce::Slider songKeySlider { juce::Slider::IncDecButtons, juce::Slider::TextBoxLeft }; // per song, semitones
     juce::Label paletteLabel;
     juce::Label modeLabel { {}, "Mode:" };
     juce::ComboBox modeBox;   // Free / Song Mode (notes) / Bar playback
