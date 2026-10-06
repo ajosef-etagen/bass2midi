@@ -410,7 +410,7 @@ void MainComponent::showTablature()
         auto bounds = window->getBounds();
         if (bounds.intersects (main))
         {
-            const auto screen = juce::Desktop::getInstance().getDisplays().getDisplayForRect (main)->userBounds;
+            const auto screen = juce::Desktop::getInstance().getDisplays().getDisplayForRect (main)->userBounds.toNearestInt();
             if (main.getRight() + bounds.getWidth() <= screen.getRight())
                 bounds.setPosition (main.getRight() + 8, main.getY());
             else
