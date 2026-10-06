@@ -43,7 +43,9 @@ void TabView::paint (juce::Graphics& g)
     {
         text << "Bar " << position.writtenBar + 1 << "  beat " << juce::String (position.beat, 1) << "   "
              << juce::roundToInt (position.bpm) << " BPM";
-        if (position.running)
+        if (position.status.isNotEmpty())
+            text << "   " << position.status;
+        else if (position.running)
             text << "   confidence " << juce::roundToInt (100.0 * position.confidence) << " %";
         else
             text << (position.armed ? "   (armed: starts with your first note)" : "   (stopped)");

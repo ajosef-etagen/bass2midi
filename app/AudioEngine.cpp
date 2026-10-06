@@ -269,6 +269,9 @@ void AudioEngine::publishDiagnostics() noexcept
     barActive.store (d.barActive, relaxed);
     barOutputting.store (d.barOutputting, relaxed);
     barWritten.store (d.barWritten, relaxed);
+    barPlayed.store (d.barPlayed, relaxed);
+    barWaiting.store (d.barState == static_cast<int> (bass2midi::BarPlayer::State::waiting), relaxed);
+    barScoreSeconds.store (d.barScoreSeconds, relaxed);
     barsStarted.store (d.barsStarted, relaxed);
     barStops.store (d.barStops, relaxed);
     barFallbacks.store (d.barFallbacks, relaxed);
@@ -277,6 +280,7 @@ void AudioEngine::publishDiagnostics() noexcept
     barTempoRatio.store (d.barTempoRatio, relaxed);
     scoreRunning.store (d.score.running, relaxed);
     scoreArmed.store (d.scoreArmed, relaxed);
+    scoreWaiting.store (d.score.waiting, relaxed);
     scoreSeconds.store (d.score.scoreSeconds, relaxed);
     scoreBeat.store (d.score.beat, relaxed);
     scoreBpm.store (d.score.bpm, relaxed);
@@ -327,6 +331,9 @@ AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
     s.barActive = barActive.load();
     s.barOutputting = barOutputting.load();
     s.barWritten = barWritten.load();
+    s.barPlayed = barPlayed.load();
+    s.barWaiting = barWaiting.load();
+    s.barScoreSeconds = barScoreSeconds.load();
     s.barsStarted = barsStarted.load();
     s.barStops = barStops.load();
     s.barFallbacks = barFallbacks.load();
@@ -335,6 +342,7 @@ AudioEngine::Snapshot AudioEngine::getSnapshot() const noexcept
     s.barTempoRatio = barTempoRatio.load();
     s.scoreRunning = scoreRunning.load();
     s.scoreArmed = scoreArmed.load();
+    s.scoreWaiting = scoreWaiting.load();
     s.scoreSeconds = scoreSeconds.load();
     s.scoreBeat = scoreBeat.load();
     s.scoreBpm = scoreBpm.load();

@@ -54,6 +54,7 @@ private:
     double scoreBpmAtBar (int playedBar) const;
     int playedBarForWritten (int writtenBar) const;
     juce::String songModeText (const AudioEngine::Snapshot& s) const;
+    TabView::Position tablaturePosition (const AudioEngine::Snapshot& s) const;
     int selectedSongIndex() const { return songBox.getSelectedId() - songIdOffset; } // -1 = Free mode
 
     juce::PropertiesFile& settings;

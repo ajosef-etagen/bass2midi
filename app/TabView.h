@@ -21,6 +21,7 @@ public:
         int playedBar = -1, writtenBar = -1;
         double beat = 1.0, bpm = 0.0, confidence = 0.0;
         int nextNote = -1;
+        juce::String status;   // replaces the confidence / armed text in the header when set
     };
 
     // The vectors must outlive the view's use of them (MainComponent owns both).

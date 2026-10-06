@@ -323,6 +323,9 @@ int main (int argc, char** argv)
         { "wrong roots in bars 9-10", 1.0, 1.0, 10.0, {}, { 8, 9 }, 0.0 },
         { "player plays half the fills too", 1.0, 1.0, 10.0, {}, {}, 0.5 },
         { "25 ms timing jitter", 1.0, 1.0, 25.0, {}, {}, 0.0 },
+        { "20 % slower than the file", 0.8, 0.8, 10.0, {}, {}, 0.0 },
+        { "ritardando 1.00 -> 0.85", 1.0, 0.85, 10.0, {}, {}, 0.0 },
+        { "player stops after bar 10", 1.0, 1.0, 10.0, { 10, 11, 12, 13, 14, 15 }, {}, 0.0 },
     };
 
     std::ostringstream md;

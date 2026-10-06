@@ -186,17 +186,21 @@ See `docs/score-follower.md`.
 
 **Bar playback** (`Mode::bar`) is an explicitly enabled sequencer mode, owner-requested: the player plays a bar's
 root and Bass2MIDI plays all written notes of that bar, including fills the player omits. Rules:
-- Each bar is started only by a player attack in the downbeat window. Never play more than the current bar
-  ahead of the player. Without a downbeat, stop after the bar.
+- Each bar is started only by a player attack. Never play more than the current bar ahead of the player. Without
+  a downbeat, stop after the bar. Follow the player: a late downbeat after a stop starts the awaited bar and
+  teaches the slower tempo.
 - The pitch path checks the roots. Repeated contradiction falls back to Free mode.
 
 **Score follower** (`ScorePositionTracker`) estimates the live song position. It uses:
-- a tempo clock armed at a start bar and BPM, started by the first played note;
+- a tempo clock armed at a start bar and BPM, started by the first played note. It waits for the player: it never
+  runs more than a beat past the next unplayed downbeat or half-bar note;
 - correction by anchor notes (downbeats, strong beats, long notes, roots weighted high; fills low);
 - several weighted position hypotheses, including jump candidates.
 
 Rules:
 - It observes only and must not change MIDI output.
+- The tablature shows the position of the active mode: Song Mode follower, bar player, or score follower in Free
+  mode. A display must never run on while the mode that drives the output is waiting for the player.
 - Any future use of its position for predictions follows the Song Mode rules above: player-triggered, validated by
   the pitch path, gated by its confidence.
 - The tablature is computed off the audio thread (Guitar Pro string/fret, else minimal-movement EADG fingering).

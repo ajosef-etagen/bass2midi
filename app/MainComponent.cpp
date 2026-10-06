@@ -368,6 +368,66 @@ void MainComponent::songModeChanged()
     settings.setValue (repluckKey, repluckToggle.getToggleState());
 }
 
+TabView::Position MainComponent::tablaturePosition (const AudioEngine::Snapshot& s) const
+{
+    // The tablature shows the position of what is driving the output: in Song Mode the note
+    // follower (it moves only with your attacks), in bar playback the bar player (it stops after
+    // the bar when no downbeat comes), otherwise the score follower (it waits for your next note).
+    TabView::Position p;
+    const auto placeAt = [&] (double scoreSeconds)
+    {
+        p.scoreSeconds = scoreSeconds;
+        int b = 0;
+        while (b + 1 < (int) songBars.size() && songBars[(size_t) b + 1].startSeconds <= scoreSeconds + 1.0e-9)
+            ++b;
+        p.playedBar = b;
+        const auto& bar = songBars[(size_t) b];
+        p.writtenBar = bar.writtenBar;
+        const double beatSeconds = bar.lengthSeconds / juce::jmax (1, bar.numerator);
+        p.beat = 1.0 + juce::jlimit (0.0, juce::jmax (1, bar.numerator) - 1.0e-9, (scoreSeconds - bar.startSeconds) / beatSeconds);
+        const auto next = std::lower_bound (songTimeline.begin(), songTimeline.end(), scoreSeconds - 1.0e-6,
+                                             [] (const bass2midi::ExpectedNote& n, double t) { return n.startSeconds < t; });
+        p.nextNote = next != songTimeline.end() ? (int) (next - songTimeline.begin()) : -1;
+    };
+
+    const int mode = modeBox.getSelectedId();
+    if (mode == 2 && s.songActive && ! songTimeline.empty() && ! songBars.empty())
+    {
+        // Song Mode: the line sits on the last note you played; the next expected note is highlighted.
+        const int next = juce::jlimit (0, (int) songTimeline.size(), s.songPosition);
+        placeAt (next > 0 ? songTimeline[(size_t) next - 1].startSeconds : songTimeline.front().startSeconds - 1.0e-3);
+        p.nextNote = next < (int) songTimeline.size() ? next : -1;
+        p.running = true;
+        p.bpm = scoreBpmAtBar (p.playedBar) * s.songTempoRatio;
+        p.confidence = s.songConfidence;
+        p.status = "Song Mode: next note with your next attack, confidence "
+                 + juce::String (juce::roundToInt (100.0 * s.songConfidence)) + " %";
+        return p;
+    }
+    if (mode == 3 && s.barActive && s.barScoreSeconds >= 0.0 && ! songBars.empty())
+    {
+        placeAt (s.barScoreSeconds);
+        p.running = true;
+        p.bpm = scoreBpmAtBar (p.playedBar) * s.barTempoRatio;
+        p.status = s.barWaiting ? juce::String ("Bar playback: waiting for your downbeat")
+                 : s.barOutputting ? juce::String ("Bar playback: playing this bar")
+                                   : juce::String ("Bar playback: Free fallback (roots did not match)");
+        return p;
+    }
+    p.running = s.scoreRunning;
+    p.armed = s.scoreArmed;
+    p.scoreSeconds = s.scoreSeconds;
+    p.playedBar = s.scorePlayedBar;
+    p.writtenBar = s.scoreWrittenBar;
+    p.beat = s.scoreBeat;
+    p.bpm = s.scoreBpm;
+    p.confidence = s.scoreConfidence;
+    p.nextNote = s.scoreNextNote;
+    if (s.scoreRunning && s.scoreWaiting)
+        p.status = "waiting for your next note";
+    return p;
+}
+
 double MainComponent::scoreBpmAtBar (int playedBar) const
 {
     if (playedBar < 0 || playedBar >= (int) songBars.size())
@@ -645,19 +705,11 @@ void MainComponent::timerCallback()
          << "  position       " << (s.scoreWrittenBar >= 0 ? "bar " + juce::String (s.scoreWrittenBar + 1) + " beat " + juce::String (s.scoreBeat, 1)
                                                          : juce::String ("-"))
          << (s.scoreRunning ? "   " + juce::String (juce::roundToInt (s.scoreBpm)) + " BPM, confidence " + juce::String (s.scoreConfidence, 2)
+                                  + (s.scoreWaiting ? juce::String (", waiting for your next note") : juce::String())
                             : s.scoreArmed ? juce::String ("   armed, starts with the first note") : juce::String ("   stopped")) << "\n";
     if (tabView != nullptr && tablatureWindow != nullptr && tablatureWindow->isVisible())
     {
-        TabView::Position p;
-        p.running = s.scoreRunning;
-        p.armed = s.scoreArmed;
-        p.scoreSeconds = s.scoreSeconds;
-        p.playedBar = s.scorePlayedBar;
-        p.writtenBar = s.scoreWrittenBar;
-        p.beat = s.scoreBeat;
-        p.bpm = s.scoreBpm;
-        p.confidence = s.scoreConfidence;
-        p.nextNote = s.scoreNextNote;
+        auto p = tablaturePosition (s);
         if (s.sampleRateHz <= 0.0 && ! songBars.empty())
         {
             // No audio running: show the chosen start bar.
@@ -668,6 +720,7 @@ void MainComponent::timerCallback()
             p.bpm = bpmSlider.getValue();
             p.armed = true;
             p.nextNote = songBars[(size_t) p.playedBar].noteCount > 0 ? songBars[(size_t) p.playedBar].firstNote : -1;
+            p.status = {};
         }
         tabView->setPosition (p);
     }

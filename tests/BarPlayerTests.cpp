@@ -216,8 +216,8 @@ TEST_CASE ("Bar player: after a pause the clock runs on; the player re-enters on
     const Song song (10);
     Run run (song);
     // Bars 1-3 played, bars 4-5 left out (player pauses), re-entry on the downbeat of bar 6 (t = 11 s),
-    // with an off-grid attack at 9.4 s that must not start anything.
-    run.play ({ { 1.0, 90 }, { 3.0, 90 }, { 5.0, 90 }, { 9.4, 60 }, { 11.0, 90 }, { 13.0, 90 } }, 15.5);
+    // with a weak off-grid click at 9.4 s that must not start anything.
+    run.play ({ { 1.0, 90 }, { 3.0, 90 }, { 5.0, 90 }, { 9.4, 50 }, { 11.0, 90 }, { 13.0, 90 } }, 15.5);
     const auto ons = run.noteOns();
     int bar6 = 0, during = 0;
     for (const auto& e : ons)
@@ -233,4 +233,42 @@ TEST_CASE ("Bar player: after a pause the clock runs on; the player re-enters on
     for (const auto& e : ons)
         if (e.time >= 10.99 && e.time < 11.01)
             CHECK (e.e.note == song.notes[25].midiNote);
+}
+
+TEST_CASE ("Bar player: follows a player who pauses and resumes off the clock, or plays slower")
+{
+    const Song song (10);
+    {
+        // Pause after bar 3, resume at an arbitrary time (9.3 s, off the clock's grid): the awaited
+        // bar 4 starts there, and bar 5 follows two seconds later at the unchanged tempo.
+        Run run (song);
+        run.play ({ { 1.0, 90 }, { 3.0, 90 }, { 5.0, 90 }, { 9.3, 90 }, { 11.3, 90 } }, 13.5);
+        int bar4 = 0, bar5 = 0;
+        for (const auto& e : run.noteOns())
+        {
+            if (e.time >= 9.29 && e.time < 11.29)
+                ++bar4;
+            if (e.time >= 11.29 && e.time < 13.29)
+                ++bar5;
+            if (e.time >= 9.29 && e.time < 9.31)
+                CHECK (e.e.note == song.notes[15].midiNote); // bar 4's root
+        }
+        CHECK (bar4 == 5);
+        CHECK (bar5 == 5);
+    }
+    {
+        // 20 % slower than the file from the start: every bar is played, the tempo is learned.
+        Run run (song);
+        std::vector<std::pair<double, int>> attacks;
+        for (int b = 0; b < 8; ++b)
+            attacks.push_back ({ 1.0 + 2.5 * b, 90 });
+        run.play (attacks, 1.0 + 2.5 * 8);
+        int started = 0;
+        for (const auto& e : run.noteOns())
+            for (const auto& a : attacks)
+                if (std::abs (e.time - a.first) < 0.01)
+                    ++started;
+        CHECK (started == 8);
+        CHECK (run.player.getTempoRatio() == doctest::Approx (0.8).epsilon (0.03));
+    }
 }

@@ -16,7 +16,8 @@ namespace bass2midi
             && positive (replaceBelowLog) && std::isfinite (jumpPenaltyLog) && jumpPenaltyLog >= 0.0
             && jumpSearchBars >= 0 && jumpSearchBars <= 256 && unit (jumpMinAnchorWeight)
             && std::isfinite (jumpPenaltyPerBar) && jumpPenaltyPerBar >= 0.0
-            && missStreakForJumps >= 1 && unit (poorLikelihood) && forcedJumps >= 0 && forcedJumps < maxHypotheses;
+            && missStreakForJumps >= 1 && unit (poorLikelihood) && forcedJumps >= 0 && forcedJumps < maxHypotheses
+            && positive (holdBeats) && holdBeats <= 8.0 && unit (waitMinAnchorWeight) && positive (pauseBeats);
     }
 
     bool ScorePositionTracker::setSettings (const Settings& s) noexcept
@@ -57,6 +58,32 @@ namespace bass2midi
         return bars[bar].lengthSeconds / std::max (1, bars[bar].numerator);
     }
 
+    void ScorePositionTracker::setHold (Hypothesis& h) const noexcept
+    {
+        // The next note the player is expected to play: after the note just matched (a quarter beat
+        // past the anchor), on a beat or stronger.
+        const double beat = beatSecondsAt (barAtScore (std::max (0.0, h.anchorScore)));
+        const double from = h.anchorScore + 0.25 * beat;
+        int lo = 0, hi = noteCount;
+        while (lo < hi)
+        {
+            const int mid = (lo + hi) / 2;
+            if (notes[mid].startSeconds <= from)
+                lo = mid + 1;
+            else
+                hi = mid;
+        }
+        for (int i = lo; i < noteCount; ++i)
+            if (notes[i].anchorWeight >= settings.waitMinAnchorWeight)
+            {
+                h.awaitedScore = notes[i].startSeconds;
+                h.holdScore = h.awaitedScore + settings.holdBeats * beatSecondsAt (barAtScore (h.awaitedScore));
+                return;
+            }
+        // Nothing more to wait for: stop at the end of the song.
+        h.awaitedScore = h.holdScore = bars[barCount - 1].startSeconds + bars[barCount - 1].lengthSeconds;
+    }
+
     void ScorePositionTracker::arm (int bar, double bpm) noexcept
     {
         if (barCount == 0)
@@ -84,6 +111,7 @@ namespace bass2midi
             h.anchorTime = timeSeconds;
             h.ratio = std::clamp (ratio * ratios[i], settings.minTempoRatio, settings.maxTempoRatio);
             h.logWeight = i == 0 ? 0.0 : -0.5;
+            setHold (h);
         }
         bestWasJump = false;
     }
@@ -106,11 +134,14 @@ namespace bass2midi
         return b;
     }
 
-    double ScorePositionTracker::likelihood (const Hypothesis& h, double t, int midiNote, int& matchedNote) const noexcept
+    double ScorePositionTracker::likelihood (const Hypothesis& h, double t, int midiNote, int& matchedNote, bool resumed) const noexcept
     {
         matchedNote = -1;
         const double s = h.scoreAt (t);
-        const double window = settings.matchWindowBeats * beatSecondsAt (barAtScore (std::max (0.0, s)));
+        const int bar = barAtScore (std::max (0.0, s));
+        const double beat = beatSecondsAt (bar);
+        const double window = settings.matchWindowBeats * beat;
+        const double ahead = resumed ? std::max (window, beat * std::max (1, bars[bar].numerator)) : window;
         // First note at or after s - window (notes are sorted by start).
         int lo = 0, hi = noteCount;
         while (lo < hi)
@@ -122,14 +153,24 @@ namespace bass2midi
                 hi = mid;
         }
         double bestValue = 0.0;
-        for (int i = lo; i < noteCount && notes[i].startSeconds <= s + window; ++i)
+        for (int i = lo; i < noteCount && notes[i].startSeconds <= s + ahead; ++i)
         {
             const int diff = notes[i].midiNote - midiNote;
             const double pitch = diff == 0 ? 1.0 : (diff % 12 == 0 ? settings.octaveMatch : 0.0);
             if (pitch <= 0.0)
                 continue;
-            const double liveError = (notes[i].startSeconds - s) / h.ratio;
-            const double timing = std::exp (-0.5 * liveError * liveError / (settings.timingSigmaSeconds * settings.timingSigmaSeconds));
+            double timing;
+            if (resumed)
+            {
+                // After a wait the timing says little: prefer notes near where it stopped (the awaited note is half a beat back).
+                const double beats = std::abs (notes[i].startSeconds - s) / beat;
+                timing = std::exp (-0.5 * beats * beats);
+            }
+            else
+            {
+                const double liveError = (notes[i].startSeconds - s) / h.ratio;
+                timing = std::exp (-0.5 * liveError * liveError / (settings.timingSigmaSeconds * settings.timingSigmaSeconds));
+            }
             const double value = pitch * timing * (0.3 + 0.7 * notes[i].anchorWeight);
             if (value > bestValue)
             {
@@ -161,15 +202,31 @@ namespace bass2midi
         for (int i = 0; i < hypothesisCount; ++i)
         {
             auto& h = hypotheses[static_cast<std::size_t> (i)];
+            const bool resumed = h.waitingAt (t);
+            if (resumed)
+            {
+                // A short wait is a player slower than the clock: keep measuring the tempo. A long one
+                // is a pause: no tempo across it.
+                const double waitStart = h.anchorTime + (h.holdScore - h.anchorScore) / h.ratio;
+                const double beatLive = beatSecondsAt (barAtScore (std::max (0.0, h.holdScore))) / h.ratio;
+                if (t - waitStart > settings.pauseBeats * beatLive)
+                    h.lastMatchScore = -1.0;
+                // The clock waited for the player: continue from where it stopped (just past the
+                // awaited note; the match below places it exactly).
+                h.anchorScore = h.holdScore;
+                h.anchorTime = t;
+                h.holdScore = 1.0e300;
+            }
             int matched = -1;
-            const double l = likelihood (h, t, midiNote, matched);
+            const double l = likelihood (h, t, midiNote, matched, resumed);
             h.logWeight += std::log (settings.background + (1.0 - settings.background) * l);
 
-            if (matched >= 0 && l > 0.2)
+            if (matched >= 0 && l > (resumed ? 0.05 : 0.2))
             {
                 const auto& n = notes[matched];
                 const double s = h.scoreAt (t);
-                const double corrected = s + settings.correctionGain * n.anchorWeight * (n.startSeconds - s);
+                const double gain = resumed ? 1.0 : settings.correctionGain * n.anchorWeight;
+                const double corrected = s + gain * (n.startSeconds - s);
                 if (h.lastMatchScore >= 0.0 && n.startSeconds - h.lastMatchScore >= settings.minTempoSpanSeconds && t > h.lastMatchTime)
                 {
                     const double observed = std::clamp ((n.startSeconds - h.lastMatchScore) / (t - h.lastMatchTime),
@@ -184,6 +241,12 @@ namespace bass2midi
                 h.anchorScore = corrected;
                 h.anchorTime = t;
             }
+            else
+            {
+                h.anchorScore = h.scoreAt (t);
+                h.anchorTime = t;
+            }
+            setHold (h);
             maxLog = std::max (maxLog, h.logWeight);
         }
         for (int i = 0; i < hypothesisCount; ++i)
@@ -234,6 +297,7 @@ namespace bass2midi
                 h.ratio = std::clamp (bestH.ratio * ratios[variation % 4], settings.minTempoRatio, settings.maxTempoRatio);
                 h.logWeight = -1.0;
                 h.jump = false;
+                setHold (h);
                 ++variation;
             }
             makeJump = ! makeJump;
@@ -283,6 +347,7 @@ namespace bass2midi
         h.ratio = bestH.ratio;
         h.logWeight = -settings.jumpPenaltyLog - settings.jumpPenaltyPerBar * barsAway;
         h.jump = true;
+        setHold (h);
         return true;
     }
 
@@ -301,6 +366,7 @@ namespace bass2midi
         {
             const auto& h = hypotheses[static_cast<std::size_t> (best())];
             p.scoreSeconds = std::max (0.0, h.scoreAt (t));
+            p.waiting = h.waitingAt (t);
             p.tempoRatio = h.ratio;
 
             double total = 0.0, agreeing = 0.0;

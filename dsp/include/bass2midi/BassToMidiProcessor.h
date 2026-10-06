@@ -113,6 +113,7 @@ namespace bass2midi
             int barState = 0;               // BarPlayer::State
             int barPlayed = -1, barWritten = -1, barCount = 0;
             double barTempoRatio = 1.0;
+            double barScoreSeconds = -1.0;  // display position of bar playback (BarPlayer::getScoreSecondsAt)
             double nextAnchorSeconds = -1.0;
             int barsStarted = 0, barStops = 0, rootMatches = 0, rootMismatches = 0, barFallbacks = 0;
             // Score follower (display): position of the band in the song

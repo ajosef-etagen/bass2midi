@@ -143,6 +143,16 @@ namespace bass2midi
         return timeSeconds > horizon ? bar : -1;
     }
 
+    double BarPlayer::getScoreSecondsAt (double nowSeconds) const noexcept
+    {
+        if (state == State::idle || barCount == 0)
+            return -1.0;
+        const auto& b = bars[bar];
+        if (state == State::waiting)
+            return b.startSeconds + anchorOffset (bar);
+        return b.startSeconds + std::clamp ((nowSeconds - barStartTime) * tempoRatio, 0.0, b.lengthSeconds * 0.999);
+    }
+
     void BarPlayer::stop (Output& out) noexcept
     {
         noteOff (out);
@@ -170,16 +180,20 @@ namespace bass2midi
         }
     }
 
-    void BarPlayer::startBar (int b, double attackTime, int attackVelocity, Output& out) noexcept
+    void BarPlayer::startBar (int b, double attackTime, int attackVelocity, Output& out, int lateAfterBar) noexcept
     {
-        if (state == State::playing)
+        // Learn the live tempo from the anchor-to-anchor spacing: from the bar playing, or from the
+        // bar before a stop when this anchor came too late for its window (a slower player).
+        const int previous = state == State::playing ? bar : lateAfterBar;
+        if (previous >= 0)
         {
-            // Learn the live tempo from the anchor-to-anchor spacing.
-            const double scoreSpan = (bars[b].startSeconds + anchorOffset (b)) - (bars[bar].startSeconds + anchorOffset (bar));
+            const double scoreSpan = (bars[b].startSeconds + anchorOffset (b)) - (bars[previous].startSeconds + anchorOffset (previous));
             const double liveSpan = attackTime - anchorTime;
-            if (scoreSpan > 0.0 && liveSpan > 0.0)
+            const double raw = scoreSpan > 0.0 && liveSpan > 0.0 ? scoreSpan / liveSpan : 0.0;
+            // A late anchor far outside the tempo range is a pause, not a slower player.
+            if (raw > 0.0 && (state == State::playing || raw >= settings.minTempoRatio))
             {
-                const double observed = std::clamp (scoreSpan / liveSpan, settings.minTempoRatio, settings.maxTempoRatio);
+                const double observed = std::clamp (raw, settings.minTempoRatio, settings.maxTempoRatio);
                 // The first spacing replaces the score tempo outright (the band rarely plays at the
                 // file's tempo); later ones are smoothed against downbeat jitter.
                 const double adapt = tempoUpdates == 0 ? 1.0 : settings.tempoAdapt;
@@ -216,11 +230,21 @@ namespace bass2midi
     {
         if (state == State::waiting)
         {
-            const int b = resumeBar (timeSeconds);
+            int b = resumeBar (timeSeconds);
+            int lateAfter = -1;
             if (b < 0)
-                return false; // off the running clock's grid: not a downbeat
+            {
+                // Off the running clock's grid: the player is late for the awaited bar (slower than
+                // the clock) or resumes after a pause. Follow the player: start that bar now (and
+                // learn the slower tempo, see startBar) - unless the attack is much weaker than the
+                // last anchor (a ghost click, not a downbeat).
+                if (attackVelocity < velocity - settings.maxAnchorVelocityDrop)
+                    return false;
+                b = bar;
+                lateAfter = clockBar;
+            }
             clockRunning = false;
-            startBar (b, timeSeconds, attackVelocity, out);
+            startBar (b, timeSeconds, attackVelocity, out, lateAfter);
             return true;
         }
         if (state == State::playing && nextBar >= 0 && timeSeconds >= nextAnchorTime - nextAnchorEarly

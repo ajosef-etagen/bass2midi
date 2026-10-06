@@ -253,6 +253,7 @@ namespace bass2midi
         diagnostics.barWritten = barPlayer.getWrittenBar();
         diagnostics.barCount = timelineBarCount;
         diagnostics.barTempoRatio = barPlayer.getTempoRatio();
+        diagnostics.barScoreSeconds = barPlayer.getScoreSecondsAt (seconds (blockEnd));
         diagnostics.nextAnchorSeconds = barPlayer.getNextAnchorSeconds();
         diagnostics.barsStarted = barPlayer.getBarsStarted();
         diagnostics.barStops = barPlayer.getStops();

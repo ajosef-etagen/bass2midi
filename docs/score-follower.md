@@ -62,14 +62,20 @@ player leaves out.
   - the tempo comes from the downbeat spacing (EMA, max step 15 %);
   - velocity follows the downbeat attack.
 - A bar is never started without the player's attack. Nothing plays more than one bar ahead. Without a downbeat the
-  playback stops after the current bar, while the clock runs on so a later downbeat can resume.
+  playback stops after the current bar.
+- Playback follows the player. After a stop, an attack on a later bar's downbeat at the running clock resumes there
+  (the band played on). Any other attack starts the bar that was awaited: the player was late or paused. A weak
+  click (more than 30 velocity units below the last downbeat) is ignored. If the late downbeat implies a tempo
+  within range (≥ 0.6 × score), that tempo is learned. A player 20 % slower than the file used to lose almost
+  every bar (15 of 80 notes); now 74 of 80 notes play on time, with one stop at the start.
 - The pitch path checks the root (pitch class). Two mismatching roots in a row fall back to Free mode; two
   matching roots resume.
 
 Synthetic result (`bass2midi_barmode_eval`, [`baseline/bar-mode-synthetic/`](baseline/bar-mode-synthetic/)):
 - on the built-in groove and on 40 real bars of the owner's song, all written notes play on time (p50 ≈ 7 ms,
   p95 ≈ 13 ms);
-- pauses, accelerando, wrong roots and extra fills by the player behave as intended.
+- pauses, accelerando, ritardando, a 20 % slower player, a player who stops, wrong roots and extra fills by the
+  player behave as intended.
 
 On the owner's live take (full bass line, not only roots) bar playback loses the bar:
 - many fills fall into the downbeat window;
@@ -79,7 +85,7 @@ It is meant for playing the roots, and has not yet been tested with a take playe
 
 ## Live score follower (`ScorePositionTracker`)
 
-It answers the question "where in the song is the band?" without playing anything. Its output is shown in the
+It answers the question "where in the song am I?" without playing anything. Its output is shown in the
 tablature window and the diagnostics. MIDI output is unchanged.
 
 **Tempo clock**
@@ -98,6 +104,19 @@ tablature window and the diagnostics. MIDI output is unchanged.
   1 s apart.
 - Fills the score does not have match nothing and change nothing.
 
+**The clock waits for the player**
+- The position never runs more than one beat past the next written downbeat or half-bar note that has not been
+  played yet (`holdBeats` = 1, `waitMinAnchorWeight` = 0.7). There it stops and shows "waiting for your next note".
+- The next played note continues from there. It may be any note up to a bar ahead, and the match places the
+  position on it.
+- A short wait (≤ 2 beats, `pauseBeats`) means the player is slower than the clock: the tempo is still measured,
+  with an EMA step of 0.5. A longer wait is a pause, and no tempo is measured across it.
+- A player 20 % slower than the set BPM is never more than one beat behind the display. After about 7 bars the
+  tempo is learned and the position is on time.
+- Waiting on every beat (`waitMinAnchorWeight` 0.5) and a shorter hold (½ beat) lost the position on the live take,
+  because the band played on while the player varied the line. Downbeats and half bars with a one-beat hold cost
+  little there (see below).
+
 **Several candidates**
 - Hypotheses far below the best (< −6 log) are replaced by variations of the best one.
 - They can also be replaced by jump candidates: strong anchors with the played pitch within ±16 bars, nearest
@@ -111,18 +130,25 @@ tablature window and the diagnostics. MIDI output is unchanged.
 **Measured on the owner's live take**, a band tempo of about 145 BPM:
 - Reference: the score aligned to the take by sequence alignment (see `song-mode.md`).
 - Method: an ad-hoc harness that is not yet in `eval/`. It feeds the take's Free-mode notes to the tracker and
-  compares the position with the aligned score time at each aligned note.
+  compares the position with the aligned score time at 174 aligned notes.
 
-| start | BPM set | median error | ≤ ½ beat | ≤ 1 beat |
+| start, BPM set | version | median error | ≤ ½ beat | ≤ 2 beats |
 |---|---|---|---|---|
-| bar 18 | 130–160 | 0.12 beat | 81–84 % | 92–95 % |
-| bar 4 | 120 | – | 86 % | (≤ 2 beats: 100 %) |
+| bar 18, 130–160 | without waiting | 0.15–0.16 beat | 76–78 % | 93–95 % |
+| bar 18, 130–160 | waits for the player | 0.15–0.17 beat | 75–78 % | 93–95 % |
+| bar 4, 120 | without waiting | 0.17 beat | 66 % | 83 % |
+| bar 4, 120 | waits for the player | 0.21 beat | 66 % | 83 % |
 
-The position holds even with a wrong BPM of up to about ±10 %, because the roots correct it. Unit tests
+An earlier version of this note gave 81–84 % for bar 18. That was a different harness setup; the numbers above
+come from one setup run on both versions.
+
+The position holds even with a set BPM up to about ±10 % off, because the roots correct it. Unit tests
 (`ScoreTrackerTests`) cover:
 - the clock;
 - roots only at 8 % off tempo plus foreign fills;
 - a skipped section found again by a jump;
+- the clock waits when the player stops and continues with the player;
+- a player 20 % slower than the BPM;
 - validation.
 
 ## App
@@ -133,14 +159,17 @@ The position holds even with a wrong BPM of up to about ±10 %, because the root
    - two rows of four bars, G-D-A-E;
    - fret numbers, with anchors slightly larger;
    - a red position line, the next note in orange, played notes dimmed;
-   - a header with bar, beat, BPM, confidence and the next four notes with string/fret.
+   - a header with bar, beat, BPM, status and the next four notes with string/fret.
 3. Play. The clock starts with the first note. **Stop clock** stops it, and **Go to bar** re-arms it.
 4. **Mode**:
    - Free: the default.
    - Song Mode.
    - Bar playback: your downbeat starts the bar, the song's notes play.
 
-   The score follower runs in every mode.
+   The score follower runs in every mode. The tablature shows the position of the active mode:
+   - Song Mode: the note follower. The line sits on the last note played and moves only with the next attack.
+   - Bar playback: the bar player. The line moves through the bar being played and stops at the awaited downbeat.
+   - Free: the score follower, which waits for the player.
 
 ## Next steps
 

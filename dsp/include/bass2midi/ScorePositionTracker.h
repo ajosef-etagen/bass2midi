@@ -2,6 +2,7 @@
 
 #include "bass2midi/ExpectedNote.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 
@@ -27,6 +28,13 @@ namespace bass2midi
     //    weakest hypotheses are replaced by jump candidates regardless of their relative weight (all
     //    hypotheses near a wrong place fail alike, so relative weights alone would never trigger it).
     //
+    //  - The clock waits for the player: a hypothesis's position never runs more than holdBeats past
+    //    the next written note it expects the player to play (the next note after its last match
+    //    with anchor weight >= waitMinAnchorWeight: downbeats and half bars; fills are passed). There it stops
+    //    until the player plays again: a player who slows down or pauses holds the position, and
+    //    the next played note continues from the awaited note (matched within a bar ahead). A short wait
+    //    (<= pauseBeats) still measures the tempo, so a slower player is learned; a long pause does not.
+    //
     // The best hypothesis gives the position; its weight share among the hypotheses agreeing with
     // it (within a quarter beat) is the confidence.
     //
@@ -44,7 +52,7 @@ namespace bass2midi
             double octaveMatch = 0.6;           // likelihood of the right pitch class in another octave
             double background = 0.05;           // likelihood floor (a note the score does not explain)
             double correctionGain = 0.6;        // fraction of the timing error corrected (x anchor weight)
-            double tempoAdapt = 0.25;           // EMA step of a hypothesis's tempo per matched spacing
+            double tempoAdapt = 0.5;            // EMA step of a hypothesis's tempo per matched spacing (x anchor weight)
             double minTempoSpanSeconds = 1.0;   // score span between matches needed to update the tempo
             double minTempoRatio = 0.5, maxTempoRatio = 2.0;
             double replaceBelowLog = 6.0;       // hypotheses this far (natural log) below the best are replaced
@@ -57,6 +65,10 @@ namespace bass2midi
                                                 // wrongly on a live take with many variations)
             double poorLikelihood = 0.15;       // "poorly explained" for the best hypothesis
             int forcedJumps = 3;                // hypotheses replaced then
+            double holdBeats = 1.0;             // the clock runs at most this far past the awaited note, then waits
+            double pauseBeats = 2.0;            // a wait longer than this (live beats) is a pause: no tempo measured across it
+            double waitMinAnchorWeight = 0.7;   // notes the clock waits for (0.7: downbeats and half-bar beats; waiting
+                                                // on every beat lost the position on a live take full of variations)
 
             bool isValid() const noexcept;
         };
@@ -72,6 +84,7 @@ namespace bass2midi
             double tempoRatio = 1.0;     // live / score tempo
             double confidence = 0.0;     // 0..1
             int nextNote = -1;           // first timeline note at or after the position
+            bool waiting = false;        // the clock stopped at the awaited note: the player has not played it yet
         };
 
         bool setSettings (const Settings& s) noexcept;
@@ -100,15 +113,20 @@ namespace bass2midi
         {
             double anchorScore = 0.0, anchorTime = 0.0, ratio = 1.0, logWeight = 0.0;
             double lastMatchScore = -1.0, lastMatchTime = 0.0; // for tempo refinement
+            double awaitedScore = 1.0e300, holdScore = 1.0e300; // the note the clock waits for, and where it stops
             bool jump = false;
-            double scoreAt (double t) const noexcept { return anchorScore + (t - anchorTime) * ratio; }
+            double freeScoreAt (double t) const noexcept { return anchorScore + (t - anchorTime) * ratio; }
+            double scoreAt (double t) const noexcept { return std::min (freeScoreAt (t), holdScore); }
+            bool waitingAt (double t) const noexcept { return freeScoreAt (t) >= holdScore; }
         };
 
         int barAtScore (double scoreSeconds) const noexcept;
         double beatSecondsAt (int bar) const noexcept;
         void seed (double scoreSeconds, double timeSeconds, double ratio) noexcept;
         int best() const noexcept;
-        double likelihood (const Hypothesis& h, double t, int midiNote, int& matchedNote) const noexcept;
+        // `resumed`: the hypothesis waited for the player; the note may be any note up to a bar ahead.
+        double likelihood (const Hypothesis& h, double t, int midiNote, int& matchedNote, bool resumed = false) const noexcept;
+        void setHold (Hypothesis& h) const noexcept;
 
         Settings settings;
         const ExpectedNote* notes = nullptr;

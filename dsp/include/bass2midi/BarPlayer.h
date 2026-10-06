@@ -30,8 +30,9 @@ namespace bass2midi
     //    longer rests stop playback (a break: restart at the next anchor attack).
     //  - After a stop the bar clock keeps running at the learned tempo: an attack that falls on the
     //    anchor time of a later bar (within maxResumeBars) resumes there - the band played on while
-    //    the player paused. An attack off that grid is ignored; after maxResumeBars, or at the very
-    //    start, any attack starts the awaited bar.
+    //    the player paused. Any other attack starts the awaited bar: the player was late (slower
+    //    than the clock) or paused, and playback follows the player. A late anchor within the tempo
+    //    range also teaches the tempo (from the anchor before the stop).
     //
     // Real-time: no allocation; the timeline arrays are owned by the caller (see SongFollower).
     class BarPlayer
@@ -100,11 +101,14 @@ namespace bass2midi
         int getRootMismatches() const noexcept { return rootMismatches; }
         int getFallbacks() const noexcept { return fallbacks; }
         double getNextAnchorSeconds() const noexcept { return nextAnchorTime; } // live time expected, < 0 none
+        // Score position for display: inside the playing bar at the live tempo (never past its end);
+        // while waiting, the awaited bar's anchor note. -1 when idle.
+        double getScoreSecondsAt (double nowSeconds) const noexcept;
 
     private:
         int nextNonEmptyBar (int from) const noexcept;
         double anchorOffset (int b) const noexcept; // score seconds from bar start to its first note
-        void startBar (int b, double anchorTime, int velocity, Output& out) noexcept;
+        void startBar (int b, double anchorTime, int velocity, Output& out, int lateAfterBar = -1) noexcept;
         void noteOff (Output& out) noexcept;
         void noteOn (int midiNote, int velocity, Output& out) noexcept;
         void push (Output& out, NoteEvent e) noexcept;

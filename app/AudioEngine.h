@@ -71,12 +71,12 @@ public:
         int predictions = 0, corrections = 0, resyncs = 0, extraAttacks = 0, ghostAttacks = 0, unpitchedAttacks = 0;
 
         // Bar playback
-        bool barActive = false, barOutputting = false;
-        int barWritten = -1, barsStarted = 0, barStops = 0, barFallbacks = 0, rootMatches = 0, rootMismatches = 0;
-        double barTempoRatio = 1.0;
+        bool barActive = false, barOutputting = false, barWaiting = false;
+        int barPlayed = -1, barWritten = -1, barsStarted = 0, barStops = 0, barFallbacks = 0, rootMatches = 0, rootMismatches = 0;
+        double barTempoRatio = 1.0, barScoreSeconds = -1.0;
 
         // Score follower
-        bool scoreRunning = false, scoreArmed = false;
+        bool scoreRunning = false, scoreArmed = false, scoreWaiting = false;
         double scoreSeconds = 0.0, scoreBeat = 1.0, scoreBpm = 0.0, scoreConfidence = 0.0;
         int scorePlayedBar = -1, scoreWrittenBar = -1, scoreNextNote = -1;
     };
@@ -196,9 +196,10 @@ private:
     std::atomic<int> lastPredictedNote { -1 }, lastValidatedNote { -1 }, lastValidationMatch { -1 };
     std::atomic<double> songConfidence { 0.0 }, songTempoRatio { 1.0 }, lastTriggerLatencyMs { -1.0 };
     std::atomic<int> predictions { 0 }, corrections { 0 }, resyncs { 0 }, extraAttacks { 0 }, ghostAttacks { 0 }, unpitchedAttacks { 0 };
-    std::atomic<bool> barActive { false }, barOutputting { false }, scoreRunning { false }, scoreArmed { false };
-    std::atomic<int> barWritten { -1 }, barsStarted { 0 }, barStops { 0 }, barFallbacks { 0 }, rootMatches { 0 }, rootMismatches { 0 };
-    std::atomic<double> barTempoRatio { 1.0 }, scoreSeconds { 0.0 }, scoreBeat { 1.0 }, scoreBpm { 0.0 }, scoreConfidence { 0.0 };
+    std::atomic<bool> barActive { false }, barOutputting { false }, barWaiting { false }, scoreRunning { false }, scoreArmed { false },
+                      scoreWaiting { false };
+    std::atomic<int> barPlayed { -1 }, barWritten { -1 }, barsStarted { 0 }, barStops { 0 }, barFallbacks { 0 }, rootMatches { 0 }, rootMismatches { 0 };
+    std::atomic<double> barScoreSeconds { -1.0 }, barTempoRatio { 1.0 }, scoreSeconds { 0.0 }, scoreBeat { 1.0 }, scoreBpm { 0.0 }, scoreConfidence { 0.0 };
     std::atomic<int> scorePlayedBar { -1 }, scoreWrittenBar { -1 }, scoreNextNote { -1 };
 
     // Callback cost, measured with the high-resolution tick counter (lock- and allocation-free).

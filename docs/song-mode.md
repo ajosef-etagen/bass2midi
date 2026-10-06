@@ -142,6 +142,9 @@ Notes on the table:
     first Note Ons, most of the roughly 22 varied notes.
   - A wrong start costs 14 wrong notes before re-alignment.
   - A ghost click with re-pluck detection gives a short blip (18 clicks), but no follow-up error.
+- A player 20 % slower than the file (`tempo-20%`, added later as the last scenario so the other rows stay
+  comparable) is followed note for note: 216 of 216 first Note Ons correct with re-pluck detection, p50 4.7 ms,
+  tempo ratio learned at 0.80. Song Mode advances only on attacks. It does not move on while the player pauses.
 - Free mode is unchanged: the full `bass2midi_baseline` run is identical row for row.
 
 ## Real DI takes (pseudo-score)

@@ -119,6 +119,54 @@ TEST_CASE ("Score tracker: a skipped section is found again by a jump candidate"
     CHECK (t.getJumps() >= 1);
 }
 
+TEST_CASE ("Score tracker: the clock waits when the player stops, and continues with the player")
+{
+    const Song song (16);
+    ScorePositionTracker t;
+    t.setTimeline (song.notes.data(), (int) song.notes.size(), song.bars.data(), (int) song.bars.size());
+    t.arm (0, 120.0);
+    for (int b = 0; b < 4; ++b)
+        t.onNote (2.0 * b, song.notes[(std::size_t) b * 5].midiNote);
+
+    // Silence for 14 s: the position stops one beat past bar 4's root (the awaited note).
+    const auto held = t.positionAt (20.0);
+    CHECK (held.waiting);
+    CHECK (held.writtenBar == 4);
+    CHECK (held.beat == doctest::Approx (2.0));
+    CHECK (t.positionAt (30.0).scoreSeconds == doctest::Approx (held.scoreSeconds));
+
+    // The player resumes with bar 4's root: the position continues from there at the old tempo.
+    for (int b = 4; b < 8; ++b)
+    {
+        const double live = 20.0 + 2.0 * (b - 4);
+        if (b > 4)
+            CHECK (std::abs (beatError (t, live, 2.0 * b)) < 0.25);
+        t.onNote (live, song.notes[(std::size_t) b * 5].midiNote);
+        CHECK_FALSE (t.positionAt (live + 0.01).waiting);
+    }
+    CHECK (t.positionAt (26.5).bpm == doctest::Approx (120.0).epsilon (0.05));
+}
+
+TEST_CASE ("Score tracker: a player 20 % slower than the BPM is followed, not run over")
+{
+    const Song song (24);
+    ScorePositionTracker t;
+    t.setTimeline (song.notes.data(), (int) song.notes.size(), song.bars.data(), (int) song.bars.size());
+    t.arm (0, 120.0);
+    const double ratio = 0.8;
+    for (int b = 0; b < 24; ++b)
+    {
+        const double live = 2.0 * b / ratio;
+        // Never more than the hold (one beat) ahead of the player; on time once the tempo is learned.
+        if (b >= 1)
+            CHECK (beatError (t, live, 2.0 * b) <= 1.0 + 1.0e-6);
+        if (b >= 8)
+            CHECK (std::abs (beatError (t, live, 2.0 * b)) < 0.25);
+        t.onNote (live, song.notes[(std::size_t) b * 5].midiNote);
+    }
+    CHECK (t.positionAt (2.0 * 23 / ratio).bpm == doctest::Approx (120.0 * ratio).epsilon (0.05));
+}
+
 TEST_CASE ("Score tracker: settings validation and empty timeline")
 {
     ScorePositionTracker::Settings s;

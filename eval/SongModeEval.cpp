@@ -352,6 +352,7 @@ int main (int argc, char** argv)
         { "ghost-clicks-10%", 1.0, 15.0, 0.0, 0.10, 0.0, 0 },
         { "skipped-5%", 1.0, 15.0, 0.0, 0.0, 0.05, 0 },
         { "wrong-start+4", 1.0, 15.0, 0.0, 0.0, 0.0, 4 },
+        { "tempo-20%", 0.8, 15.0, 0.0, 0.0, 0.0, 0 },
     };
 
     std::vector<RunResult> results;

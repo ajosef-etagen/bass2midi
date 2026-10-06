@@ -24,6 +24,9 @@ Columns: notes played | first Note On correct | first Note On wrong | missed (no
 | octave-pump-eighths-120 | wrong-start+4 | free | 64 | 48 | 0 | 16 | 0 | 0 | 64.7 | 78.4 | 79.3 | 0 | 0 | 0 | 0.80 / 1.00 |
 | octave-pump-eighths-120 | wrong-start+4 | song | 64 | 49 | 4 | 11 | 4 | 0 | 34.8 | 77.3 | 79.0 | 28 | 4 | 2 | 1.00 / 0.99 |
 | octave-pump-eighths-120 | wrong-start+4 | song+periodicity | 64 | 60 | 4 | 0 | 4 | 0 | 4.6 | 54.0 | 103.8 | 64 | 4 | 2 | 1.00 / 1.00 |
+| octave-pump-eighths-120 | tempo-20% | free | 64 | 48 | 0 | 16 | 0 | 0 | 65.2 | 79.7 | 115.5 | 0 | 0 | 0 | 0.80 / 1.00 |
+| octave-pump-eighths-120 | tempo-20% | song | 64 | 59 | 0 | 5 | 0 | 0 | 4.9 | 79.0 | 115.5 | 38 | 0 | 0 | 1.00 / 0.78 |
+| octave-pump-eighths-120 | tempo-20% | song+periodicity | 64 | 64 | 0 | 0 | 0 | 0 | 3.9 | 7.2 | 8.8 | 64 | 0 | 0 | 1.00 / 0.79 |
 | walking-quarters-110 | as-written | free | 32 | 32 | 0 | 0 | 0 | 0 | 39.0 | 46.8 | 47.9 | 0 | 0 | 0 | 0.80 / 1.00 |
 | walking-quarters-110 | as-written | song | 32 | 32 | 0 | 0 | 0 | 0 | 4.1 | 39.5 | 39.8 | 25 | 0 | 0 | 1.00 / 1.00 |
 | walking-quarters-110 | as-written | song+periodicity | 32 | 32 | 0 | 0 | 0 | 0 | 4.1 | 6.1 | 6.5 | 32 | 0 | 0 | 1.00 / 1.00 |
@@ -42,6 +45,9 @@ Columns: notes played | first Note On correct | first Note On wrong | missed (no
 | walking-quarters-110 | wrong-start+4 | free | 32 | 32 | 0 | 0 | 0 | 0 | 39.3 | 49.0 | 49.2 | 0 | 0 | 0 | 0.80 / 1.00 |
 | walking-quarters-110 | wrong-start+4 | song | 32 | 31 | 1 | 0 | 1 | 0 | 4.7 | 41.5 | 42.6 | 25 | 1 | 1 | 1.00 / 1.00 |
 | walking-quarters-110 | wrong-start+4 | song+periodicity | 32 | 30 | 2 | 0 | 2 | 0 | 4.4 | 42.6 | 49.9 | 32 | 2 | 1 | 1.00 / 1.00 |
+| walking-quarters-110 | tempo-20% | free | 32 | 32 | 0 | 0 | 0 | 0 | 36.7 | 47.9 | 49.1 | 0 | 0 | 0 | 0.80 / 1.00 |
+| walking-quarters-110 | tempo-20% | song | 32 | 32 | 0 | 0 | 0 | 0 | 3.8 | 36.7 | 36.7 | 28 | 0 | 0 | 1.00 / 0.80 |
+| walking-quarters-110 | tempo-20% | song+periodicity | 32 | 32 | 0 | 0 | 0 | 0 | 3.8 | 5.1 | 5.3 | 32 | 0 | 0 | 1.00 / 0.80 |
 | repeated-sixteenths-100 | as-written | free | 64 | 32 | 0 | 32 | 0 | 0 | 40.2 | 48.1 | 48.3 | 0 | 0 | 0 | 0.80 / 1.00 |
 | repeated-sixteenths-100 | as-written | song | 64 | 32 | 0 | 32 | 0 | 0 | 40.2 | 48.1 | 48.3 | 1 | 0 | 0 | 1.00 / 1.02 |
 | repeated-sixteenths-100 | as-written | song+periodicity | 64 | 64 | 0 | 0 | 0 | 0 | 4.9 | 8.1 | 8.4 | 64 | 0 | 0 | 1.00 / 1.01 |
@@ -60,6 +66,9 @@ Columns: notes played | first Note On correct | first Note On wrong | missed (no
 | repeated-sixteenths-100 | wrong-start+4 | free | 64 | 32 | 0 | 32 | 0 | 0 | 38.7 | 48.6 | 49.0 | 0 | 0 | 0 | 0.80 / 1.00 |
 | repeated-sixteenths-100 | wrong-start+4 | song | 64 | 31 | 1 | 32 | 1 | 0 | 40.9 | 48.6 | 49.0 | 1 | 1 | 1 | 1.00 / 0.99 |
 | repeated-sixteenths-100 | wrong-start+4 | song+periodicity | 64 | 60 | 4 | 0 | 4 | 0 | 5.2 | 42.0 | 44.4 | 64 | 4 | 3 | 1.00 / 1.00 |
+| repeated-sixteenths-100 | tempo-20% | free | 64 | 32 | 0 | 32 | 0 | 0 | 38.9 | 48.6 | 49.0 | 0 | 0 | 0 | 0.80 / 1.00 |
+| repeated-sixteenths-100 | tempo-20% | song | 64 | 32 | 0 | 32 | 0 | 0 | 38.9 | 48.6 | 49.0 | 1 | 0 | 0 | 1.00 / 0.79 |
+| repeated-sixteenths-100 | tempo-20% | song+periodicity | 64 | 64 | 0 | 0 | 0 | 0 | 4.9 | 7.2 | 9.7 | 64 | 0 | 0 | 1.00 / 0.79 |
 | upper-melody-eighths-130 | as-written | free | 56 | 54 | 0 | 2 | 0 | 0 | 29.6 | 45.5 | 47.8 | 0 | 0 | 0 | 0.80 / 1.00 |
 | upper-melody-eighths-130 | as-written | song | 56 | 54 | 0 | 2 | 0 | 0 | 29.4 | 45.5 | 47.8 | 2 | 0 | 0 | 1.00 / 0.99 |
 | upper-melody-eighths-130 | as-written | song+periodicity | 56 | 56 | 0 | 0 | 0 | 0 | 4.8 | 7.5 | 8.9 | 56 | 0 | 0 | 1.00 / 0.99 |
@@ -78,6 +87,9 @@ Columns: notes played | first Note On correct | first Note On wrong | missed (no
 | upper-melody-eighths-130 | wrong-start+4 | free | 56 | 54 | 0 | 2 | 0 | 0 | 29.8 | 45.3 | 46.5 | 0 | 0 | 0 | 0.80 / 1.00 |
 | upper-melody-eighths-130 | wrong-start+4 | song | 56 | 53 | 1 | 2 | 1 | 0 | 29.3 | 45.8 | 54.0 | 2 | 1 | 2 | 1.00 / 0.99 |
 | upper-melody-eighths-130 | wrong-start+4 | song+periodicity | 56 | 52 | 4 | 0 | 4 | 0 | 4.8 | 54.0 | 96.0 | 56 | 4 | 2 | 1.00 / 0.99 |
+| upper-melody-eighths-130 | tempo-20% | free | 56 | 54 | 0 | 2 | 0 | 0 | 29.7 | 46.3 | 47.9 | 0 | 0 | 0 | 0.80 / 1.00 |
+| upper-melody-eighths-130 | tempo-20% | song | 56 | 54 | 0 | 2 | 0 | 0 | 28.7 | 46.3 | 47.9 | 5 | 0 | 0 | 1.00 / 0.80 |
+| upper-melody-eighths-130 | tempo-20% | song+periodicity | 56 | 56 | 0 | 0 | 0 | 0 | 5.0 | 7.4 | 8.6 | 56 | 0 | 0 | 1.00 / 0.80 |
 
 ## Totals by performance and mode
 
@@ -95,6 +107,9 @@ Columns: notes played | first Note On correct | first Note On wrong | missed (no
 | tempo+8%, free | 216 | 166 | 0 | 50 | 0 | 0 | 38.1 | 77.4 | 91.2 |
 | tempo+8%, song | 216 | 170 | 0 | 46 | 0 | 0 | 30.2 | 70.3 | 91.2 |
 | tempo+8%, song+periodicity | 216 | 216 | 0 | 0 | 0 | 0 | 4.8 | 7.4 | 10.5 |
+| tempo-20%, free | 216 | 166 | 0 | 50 | 0 | 0 | 37.3 | 77.2 | 115.5 |
+| tempo-20%, song | 216 | 177 | 0 | 39 | 0 | 0 | 28.5 | 71.2 | 115.5 |
+| tempo-20%, song+periodicity | 216 | 216 | 0 | 0 | 0 | 0 | 4.7 | 7.2 | 9.7 |
 | variations-10%, free | 216 | 175 | 0 | 41 | 0 | 0 | 38.2 | 76.3 | 90.6 |
 | variations-10%, song | 216 | 173 | 6 | 37 | 6 | 0 | 32.4 | 71.0 | 90.6 |
 | variations-10%, song+periodicity | 216 | 195 | 19 | 4 | 20 | 0 | 4.8 | 44.6 | 97.9 |
